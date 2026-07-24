@@ -289,24 +289,19 @@ function getDifficultyParams(){
 }
 
 function generateGalaxy(){
-    const W=canvas.width, H=canvas.height, pad=currentConfig.canvasPad;
+    const W=canvas.width,H=canvas.height,pad=currentConfig.canvasPad;
     const corners=[{x:pad,y:pad},{x:W-pad,y:pad},{x:pad,y:H-pad},{x:W-pad,y:H-pad}];
     const shuffled=[...CAMP_KEYS].sort(()=>Math.random()-0.5);
-    shuffled.forEach((ck,idx)=>{ planets.push({x:corners[idx].x, y:corners[idx].y, camp:ck, originalCamp:ck, isHome:true, troop:70, planetName:CAMPS[ck].homeName, uid:Math.random().toString(36).slice(2,10), resource:false}); });
-
-    // 麦拉芬蒙河生成在超级地球附近，并确保在画布内
-    const earthPlanet = planets.find(p=>p.camp==="EARTH"&&p.isHome);
+    shuffled.forEach((ck,idx)=>{ planets.push({x:corners[idx].x,y:corners[idx].y,camp:ck,originalCamp:ck,isHome:true,troop:70,planetName:CAMPS[ck].homeName,uid:Math.random().toString(36).slice(2,10),resource:false}); });
+    const earthPlanet=planets.find(p=>p.camp==="EARTH"&&p.isHome);
     if(earthPlanet){
-        let ox = earthPlanet.x + 80;
-        let oy = earthPlanet.y + 50;
-        // 边界检查
+        let ox = earthPlanet.x + 80, oy = earthPlanet.y + 50;
         if(ox > W - pad) ox = earthPlanet.x - 80;
         if(oy > H - pad) oy = earthPlanet.y - 50;
         if(ox < pad) ox = earthPlanet.x + 40;
         if(oy < pad) oy = earthPlanet.y + 40;
-        planets.push({x:ox, y:oy, camp:"EARTH", originalCamp:"EARTH", isHome:false, troop:10, planetName:"麦拉芬蒙河", uid:Math.random().toString(36).slice(2,10), resource:false});
+        planets.push({x:ox,y:oy,camp:"EARTH",originalCamp:"EARTH",isHome:false,troop:10,planetName:"麦拉芬蒙河",uid:Math.random().toString(36).slice(2,10),resource:false});
     }
-
     const diff=getDifficultyParams();
     let namePool=[...PLANET_NAME_LIST].sort(()=>Math.random()-0.5);
     const totalNormal=currentConfig.planetTotal-5;
@@ -582,12 +577,18 @@ function aiActionNeutralOnly(campKey, threshold){
 
 function aiWeaponLogic(){
     CAMP_KEYS.filter(c=>c!==playerCampKey).forEach(campKey => {
-        const campDef = CAMPS[campKey]; const aiPlanets = planets.filter(p=>p.camp===campKey); if(aiPlanets.length===0) return;
+        const campDef = CAMPS[campKey];
+        const aiPlanets = planets.filter(p=>p.camp===campKey);
+        if(aiPlanets.length===0) return;
+
         if(campDef.weaponType === 'mobile'){
             const existing = weapons.find(w=>w.camp===campKey && w.type==='mobile');
             if(!existing){
                 let buildPlanet = aiPlanets.find(p=>p.isHome) || aiPlanets.reduce((a,b)=>a.troop>b.troop?a:b);
-                if(buildPlanet.troop >= 180){ buildPlanet.troop -= 180; weapons.push({id:Math.random().toString(36).slice(2,8), camp:campKey, type:'mobile', planetId:buildPlanet.uid, guardBonus:campDef.guardBonus, weaken:campDef.weaken, decay:0}); }
+                if(buildPlanet.troop >= 180){
+                    buildPlanet.troop -= 180;
+                    weapons.push({id:Math.random().toString(36).slice(2,8), camp:campKey, type:'mobile', planetId:buildPlanet.uid, guardBonus:campDef.guardBonus, weaken:campDef.weaken, decay:0});
+                }
             } else {
                 let bestTarget = null, bestScore = -Infinity;
                 aiPlanets.forEach(p=>{
@@ -596,6 +597,25 @@ function aiWeaponLogic(){
                 });
                 if(!bestTarget) bestTarget = aiPlanets.reduce((a,b)=>a.troop>b.troop?a:b);
                 existing.planetId = bestTarget.uid;
+            }
+        } else if(campDef.weaponType === 'deploy'){
+            // 每5回合在己方星球部署一次阴霾/寂域（增强防守）
+            if(turn % 5 === 0 && aiPlanets.length > 0){
+                let target = aiPlanets.find(p => links.some(ln => (ln.a.uid===p.uid && ln.b.camp!==campKey && !blockedLinks.has(ln.idPair)) || (ln.b.uid===p.uid && ln.a.camp!==campKey && !blockedLinks.has(ln.idPair))));
+                if(!target) target = aiPlanets.reduce((a,b) => a.troop > b.troop ? a : b);
+                const payer = aiPlanets.reduce((a,b) => a.troop > b.troop ? a : b);
+                if(payer.troop >= 150){
+                    payer.troop -= 150;
+                    weapons.push({
+                        id: Math.random().toString(36).slice(2,8),
+                        camp: campKey,
+                        type: 'deploy',
+                        planetId: target.uid,
+                        guardBonus: campDef.guardBonus,
+                        weaken: campDef.weaken,
+                        decay: campDef.decay || 0
+                    });
+                }
             }
         }
     });
