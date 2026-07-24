@@ -289,12 +289,24 @@ function getDifficultyParams(){
 }
 
 function generateGalaxy(){
-    const W=canvas.width,H=canvas.height,pad=currentConfig.canvasPad;
+    const W=canvas.width, H=canvas.height, pad=currentConfig.canvasPad;
     const corners=[{x:pad,y:pad},{x:W-pad,y:pad},{x:pad,y:H-pad},{x:W-pad,y:H-pad}];
     const shuffled=[...CAMP_KEYS].sort(()=>Math.random()-0.5);
-    shuffled.forEach((ck,idx)=>{ planets.push({x:corners[idx].x,y:corners[idx].y,camp:ck,originalCamp:ck,isHome:true,troop:70,planetName:CAMPS[ck].homeName,uid:Math.random().toString(36).slice(2,10),resource:false}); });
-    const earthPlanet=planets.find(p=>p.camp==="EARTH"&&p.isHome);
-    if(earthPlanet)planets.push({x:earthPlanet.x+80,y:earthPlanet.y+50,camp:"EARTH",originalCamp:"EARTH",isHome:false,troop:10,planetName:"麦拉芬蒙河",uid:Math.random().toString(36).slice(2,10),resource:false});
+    shuffled.forEach((ck,idx)=>{ planets.push({x:corners[idx].x, y:corners[idx].y, camp:ck, originalCamp:ck, isHome:true, troop:70, planetName:CAMPS[ck].homeName, uid:Math.random().toString(36).slice(2,10), resource:false}); });
+
+    // 麦拉芬蒙河生成在超级地球附近，并确保在画布内
+    const earthPlanet = planets.find(p=>p.camp==="EARTH"&&p.isHome);
+    if(earthPlanet){
+        let ox = earthPlanet.x + 80;
+        let oy = earthPlanet.y + 50;
+        // 边界检查
+        if(ox > W - pad) ox = earthPlanet.x - 80;
+        if(oy > H - pad) oy = earthPlanet.y - 50;
+        if(ox < pad) ox = earthPlanet.x + 40;
+        if(oy < pad) oy = earthPlanet.y + 40;
+        planets.push({x:ox, y:oy, camp:"EARTH", originalCamp:"EARTH", isHome:false, troop:10, planetName:"麦拉芬蒙河", uid:Math.random().toString(36).slice(2,10), resource:false});
+    }
+
     const diff=getDifficultyParams();
     let namePool=[...PLANET_NAME_LIST].sort(()=>Math.random()-0.5);
     const totalNormal=currentConfig.planetTotal-5;
