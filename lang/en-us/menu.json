@@ -1,0 +1,12 @@
+{
+    "choose_camp": "Choose Faction:",
+    "camp_earth": "Super Earth | Home: Super Earth [Blue]",
+    "camp_term": "Terminids | Home: Pholus Prime [Yellow]",
+    "camp_light": "Illuminate | Home: Sith [Purple]",
+    "camp_robot": "Automatons | Home: Cyberstan [Red]",
+    "map_size": "Map Size:",
+    "size_large": "Large (150 Planets)",
+    "size_medium": "Medium (100 Planets)",
+    "size_small": "Small (50 Planets)",
+    "game_mode_normal": "Normal Mode"
+}
