@@ -1,0 +1,10 @@
+id,zh-cn,en-us
+choose_camp,选择操控阵营：,Choose Faction:
+camp_earth,超级地球｜母星：超级地球【蓝】,Super Earth | Home: Super Earth [Blue]
+camp_term,终结族｜母星：佛里主星【黄】,Terminids | Home: Pholus Prime [Yellow]
+camp_light,光能者｜母星：西斯【紫】,Illuminate | Home: Sith [Purple]
+camp_robot,机器人｜母星：生化斯坦【红】,Automatons | Home: Cyberstan [Red]
+map_size,星图规模：,Map Size:
+size_large,大（150星球）,Large (150 Planets)
+size_medium,中（100星球）,Medium (100 Planets)
+size_small,小（60星球）,Small (50 Planets)
