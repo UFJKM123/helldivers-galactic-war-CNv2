@@ -1,0 +1,3 @@
+develop_tools/build
+develop_tools/dist
+develop_tools/*.spec
