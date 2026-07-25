@@ -1,8 +1,13 @@
 import csv
 import json
-import os
+import os,sys
 
-os.chdir("E:\Python\Clone\helldivers-galactic-war-CNv2")
+if not os.path.exists("./lang"):
+    print("请在lang文件夹所在目录下运行此工具")
+    input("按任意键退出")
+    input("按任意键退出")
+    
+    sys.exit(0)
 
 
 for filename in os.listdir("./lang/lang_csv/"):
