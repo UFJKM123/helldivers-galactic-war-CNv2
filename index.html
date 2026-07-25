@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>绝地潜兵银河战争（v3.15）</title>
+<title data-lang="info.title"></title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Microsoft Yahei}
 body{background:#050512;color:#eee;display:flex;height:100vh;overflow:hidden}
@@ -39,21 +39,21 @@ select{width:100%;padding:5px;margin:4px 0;font-size:13px}
 <div id="canvasWrap"><canvas id="starCanvas"></canvas></div>
 <div id="uiPanel">
     <div id="uiContent">
-        <h3>绝地潜兵银河战争（v3.15）</h3>
-        <div class="info-line">选择操控阵营：</div>
+        <h3 data-lang="info.title"></h3>
+        <div class="info-line" data-lang="menu.choose_camp"></div>
         <select id="campSelect">
-            <option value="EARTH">超级地球｜母星：超级地球【蓝】</option>
-            <option value="TERM">终结族｜母星：佛里主星【黄】</option>
-            <option value="LIGHT">光能者｜母星：西斯【紫】</option>
-            <option value="ROBOT">机器人｜母星：生化斯坦【红】</option>
+            <option value="EARTH" data-lang="menu.camp_earth"></option>
+            <option value="TERM" data-lang="menu.camp_term"></option>
+            <option value="LIGHT" data-lang="menu.camp_light"></option>
+            <option value="ROBOT" data-lang="menu.camp_robot"></option>
         </select>
-        <div class="info-line">星图规模：</div>
+        <div class="info-line" data-lang="menu.map_size"></div>
         <select id="mapSizeSelect">
-            <option value="large" selected>大（150星球）</option>
-            <option value="medium">中（100星球）</option>
-            <option value="small">小（60星球）</option>
+            <option value="large" selected data-lang="menu.size_large"></option>
+            <option value="medium" data-lang="menu.size_medium"></option>
+            <option value="small" data-lang="menu.size_small"></option>
         </select>
-        <div class="info-line">游戏模式：</div>
+        <div class="info-line" data-lang="menu.game_mode"></div>
         <select id="gameModeSelect">
             <option value="normal" selected>普通模式</option>
             <option value="light_assault">光能突袭</option>
@@ -842,5 +842,51 @@ function endGame(victoryType){
 function startSpectate(){ resultModal.style.display="none"; spectateMode = true; }
 function closeModal(){ resultModal.style.display="none"; }
 </script>
+
+
+
+
+<script>
+let LANG = {};
+
+async function loadLanguage(lang) {
+
+    const modules = [
+        "info",
+        "menu"
+    ];
+
+    LANG = {};
+
+    for (const module of modules) {
+
+        const response = await fetch(`lang/${lang}/${module}.json`);
+
+        LANG[module] = await response.json();
+    }
+}
+function updateLanguage(root = document) {
+
+    root.querySelectorAll("[data-lang]").forEach(el => {
+        console.log("111111111111");
+        console.log(el.dataset.lang);
+        console.log(LANG[el.dataset.lang]);
+        el.textContent = t(el.dataset.lang);
+    });
+
+}
+function t(path) {
+    text = path.split(".").reduce((obj, key) => obj[key], LANG);
+    return text
+        ?? `[${path}]`;
+    
+}
+loadLanguage("zh-cn").then(() => {
+    updateLanguage();
+});
+</script>
+
+
+
 </body>
 </html>
