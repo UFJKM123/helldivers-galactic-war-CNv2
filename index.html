@@ -55,7 +55,7 @@ select{width:100%;padding:5px;margin:4px 0;font-size:13px}
         </select>
         <div class="info-line" data-lang="menu.game_mode"></div>
         <select id="gameModeSelect">
-            <option value="normal" selected>普通模式</option>
+            <option value="normal" selected data-lang="menu.game_mode_normal"></option>
             <option value="light_assault">光能突袭</option>
             <option value="democracy_dark">民主晦暗</option>
         </select>
@@ -76,7 +76,7 @@ select{width:100%;padding:5px;margin:4px 0;font-size:13px}
         <div class="send-selector"><label for="sendRatioSelect">派兵比例：</label><select id="sendRatioSelect"><option value="0.5">50% 兵力</option><option value="1.0" selected>全部兵力</option></select></div>
         <hr>
         <div class="info-line"><b>军备指令</b></div>
-        <button class="btn-weapon" id="buildWeaponBtn">建造/部署大型武器</button>
+        <button class="btn-weapon" id="buildWeaponBtn" data-lang="">建造/部署大型武器</button>
         <button class="btn-endgame" id="buildFIN">启动终结手段【威慑胜利】</button>
         <div class="info-line" id="weaponStatus">武器状态：无</div>
         <div class="info-line" id="deterrenceStatus" style="display:none;color:#ffaa44"></div>
