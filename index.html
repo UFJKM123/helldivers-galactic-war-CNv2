@@ -118,7 +118,7 @@ const MAP_SIZES = {
 
 const CAMPS = {
     EARTH:{ name:"超级地球", color:"#4499ff", homeName:"超级地球", lwName:"DSS", finName:"和平之星", weaponType:"mobile", guardBonus:20, weaken:30,
-        victorySpeech:{ conquest:"超级地球的旗帜已插遍星图！自由民主的秩序将永恒照耀银河。", deterrence:"和平之星启动了！所有反抗都在绝对力量前化为齑粉，管理式民主万岁！", defeat:"超级地球陨落了……但自由的火焰永不熄灭，我们将从废墟中重生。" },
+        victorySpeech:{ conquest:"超级地球的旗帜已插遍星图！自由民主的秩序将永恒照耀银河。", deterrence:"和平之星启动了！所有反抗都在绝对力量前化为齑粉，管理式民主长存！", defeat:"超级地球陨落了……但自由的火焰永不熄灭，我们将从废墟中重生。" },
         eliminationMessages:{ defeated:"超级地球已被彻底消灭，民主之光黯淡……", eliminator:"超级地球胜利了！所有敌人已被彻底铲除。" },
         homeFall: "超级地球被攻破了，虚伪的民主支柱轰然倒塌"
     },
@@ -502,7 +502,6 @@ function onMouseUp(e){
     } else {
         canvasClick(e);
     }
-    selectedWeapon = null;
 }
 
 function canvasClick(evt){
@@ -518,7 +517,7 @@ function canvasClick(evt){
     if(!hitPlanet){ selectedWeapon=null; selectedPlanets=[]; selDom.textContent="无"; selPlanetNameDom.textContent="-"; render(); return; }
 
     if(selectedWeapon){
-        if(selectedWeapon.type !== 'mobile') { alert("只能移动大型武器"); selectedWeapon=null; return; }
+        if(selectedWeapon.type !== 'mobile') { alert("阴霾和寂域不可移动"); selectedWeapon=null; return; }
         if(weaponMovedThisTurn) { alert("本回合已移动过武器，每回合只能移动一次"); selectedWeapon=null; render(); return; }
         const linkCheck = links.find(l=>(l.a.uid===selectedWeapon.planetId&&l.b.uid===hitPlanet.uid)||(l.b.uid===selectedWeapon.planetId&&l.a.uid===hitPlanet.uid));
         if(!linkCheck) { alert("只能移动到相邻星球"); selectedWeapon=null; render(); return; }
