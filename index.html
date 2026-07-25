@@ -56,56 +56,56 @@ select{width:100%;padding:5px;margin:4px 0;font-size:13px}
         <div class="info-line" data-lang="menu.game_mode"></div>
         <select id="gameModeSelect">
             <option value="normal" selected data-lang="menu.game_mode_normal"></option>
-            <option value="light_assault">光能突袭</option>
-            <option value="democracy_dark">民主晦暗</option>
+            <option value="light_assault" data-lang="menu.game_mode_Illuminate_Assault"></option>
+            <option value="democracy_dark" data-lang="menu.game_mode_Democracy_Obscured"></option>
         </select>
         <div class="diff-row">
             <select id="difficultySelect" style="width:60%;font-size:12px">
-                <option value="easy">简单</option>
-                <option value="normal" selected>一般</option>
-                <option value="hard">困难</option>
+                <option value="easy" data-lang="menu.difficulty_Select_easy"></option>
+                <option value="normal" selected data-lang="menu.difficulty_Select_easy"></option>
+                <option value="hard" data-lang="menu.difficulty_Select_hard"></option>
             </select>
-            <button id="randomStrengthBtn" class="btn-deploy" style="margin:0">🎲 随机强度</button>
+            <button id="randomStrengthBtn" class="btn-deploy" style="margin:0" data-lang="menu.Random_Intensity"></button>
         </div>
-        <div class="info-line" id="strengthDisplay" style="font-size:11px;color:#ffcc88">各阵营强度：未分配</div>
-        <button onclick="restartGame()">重新开局</button>
+        <div class="info-line" id="strengthDisplay" style="font-size:11px;color:#ffcc88" data-lang="menu.Faction_Strengths"></div>
+        <button onclick="restartGame()" data-lang="menu.Restart_Campaign"></button>
         <hr>
-        <div class="info-line">回合：<span id="turnNum">1</span></div>
-        <div class="info-line">选中对象：<span id="selText">无</span></div>
-        <div class="info-line">星球名称：<span id="selPlanetName">-</span></div>
-        <div class="send-selector"><label for="sendRatioSelect">派兵比例：</label><select id="sendRatioSelect"><option value="0.5">50% 兵力</option><option value="1.0" selected>全部兵力</option></select></div>
+        <div class="info-line" data-lang="menu.Turn_number_Display"><span id="turnNum">1</span></div>
+        <div class="info-line" data-lang="menu.Selected_Object_Display"><span id="selText" data-lang="menu.Selected_Object_Display_None"></span></div>
+        <div class="info-line" data-lang="menu.Planet_Name_Display"><span id="selPlanetName">-</span></div>
+        <div class="send-selector"><label for="sendRatioSelect" data-lang="menu.Deployment_Ratio"></label><select id="sendRatioSelect"><option value="0.5" data-lang="menu.Deployment_Ratio_50%_Troops"></option><option value="1.0" selected data-lang="menu.Deployment_Ratio_All_Troops"></option></select></div>
         <hr>
-        <div class="info-line"><b>军备指令</b></div>
-        <button class="btn-weapon" id="buildWeaponBtn" data-lang="">建造/部署大型武器</button>
-        <button class="btn-endgame" id="buildFIN">启动终结手段【威慑胜利】</button>
-        <div class="info-line" id="weaponStatus">武器状态：无</div>
+        <div class="info-line"><b data-lang="menu.Armament_Directive"></b></div>
+        <button class="btn-weapon" id="buildWeaponBtn" data-lang="menu.Construct_Heavy_Weapons"></button>
+        <button class="btn-endgame" id="buildFIN" data-lang="menu.Initiate_Final_Measure"></button>
+        <div class="info-line" id="weaponStatus" data-lang="menu.Weapon_Status"></div>
         <div class="info-line" id="deterrenceStatus" style="display:none;color:#ffaa44"></div>
         <hr>
-        <button class="btn-deploy" id="strategicDrawBtn">战略机遇 (等待中)</button>
-        <div class="tips" id="drawInfo" style="font-size:11px;color:#aaa">消耗30兵力，每10回合可发动一次</div>
+        <button class="btn-deploy" id="strategicDrawBtn" data-lang="menu.Strategic_Opportunity"></button>
+        <div class="tips" id="drawInfo" style="font-size:11px;color:#aaa" data-lang="menu.Strategic_Opportunity_note"></div>
         <hr>
-        <button class="btn-turn" id="nextTurnBtn">结束回合</button>
+        <button class="btn-turn" id="nextTurnBtn" data-lang="menu.End_Turn"></button>
         <div class="tips" id="tipsPanel"></div>
     </div>
-    <div id="signature">作者：Anklian和NoneTypes以及传奇的Deepseek和豆包</div>
+    <div id="signature" data-lang="menu.Authors_note"></div>
 </div>
 
 <div class="modal" id="resultModal">
     <div class="modal-box">
-        <h2 id="winTitle">对局结束</h2>
+        <h2 id="winTitle" data-lang="menu.Game_End_Note"></h2>
         <div class="score-text" id="resultType"></div>
         <div class="score-text" id="campVictoryMessage"></div>
-        <div class="score-text">最终控制星球：<span id="statPlanet">0</span></div>
-        <div class="score-text">累计消灭敌军兵力：<span id="statKills">0</span></div>
-        <div class="score-text">存活回合：<span id="statTurn">0</span></div>
-        <div class="score-text"><b>本局综合评分：<span id="finalScore">0</span></b></div>
+        <div class="score-text" data-lang="menu.Final_Controlled_Planets"><span id="statPlanet">0</span></div>
+        <div class="score-text" data-lang="menu.Enemy_Troops_Eliminated"><span id="statKills">0</span></div>
+        <div class="score-text" data-lang="menu.Survived_Turns"><span id="statTurn">0</span></div>
+        <div class="score-text"><b data-lang="menu.Overall_Match_Score"><span id="finalScore">0</span></b></div>
         <br>
-        <button id="watchBtn" style="display:none;background:#b8860b" onclick="startSpectate()">观战</button>
-        <button onclick="closeModal();restartGame()">再来一局</button>
+        <button id="watchBtn" style="display:none;background:#b8860b" onclick="startSpectate()" data-lang="menu.Spectate_note"></button>
+        <button onclick="closeModal();restartGame()" data-lang="menu.New_Match_note"></button>
     </div>
 </div>
 <div class="modal" id="eventModal">
-    <div class="modal-box"><h2 id="eventTitle">事件</h2><p id="eventMessage"></p><button onclick="closeEventModal()">确定</button></div>
+    <div class="modal-box"><h2 id="eventTitle" data-lang="menu.Event_note"></h2><p id="eventMessage"></p><button onclick="closeEventModal()" data-lang="menu.Confirm_note"></button></div>
 </div>
 
 <script>

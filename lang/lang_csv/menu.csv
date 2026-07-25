@@ -8,4 +8,37 @@ map_size,星图规模：,Map Size:
 size_large,大（150星球）,Large (150 Planets)
 size_medium,中（100星球）,Medium (100 Planets)
 size_small,小（60星球）,Small (50 Planets)
-game_mode_normal,普通模式,Normal Mode
+game_mode,游戏模式：,gamemode
+game_mode_normal,普通模式,normal
+game_mode_Illuminate_Assault,光能突袭,Illuminate Assault
+game_mode_Democracy_Obscured,民主晦暗,Democracy Obscured
+difficulty_Select_easy,简单,easy
+difficulty_Select_normal,一般,normal
+difficulty_Select_hard,困难,hard
+Random_Intensity,🎲 随机强度,Random Intensity
+Faction_Strengths,各阵营强度：未分配,Faction Strengths: Unassigned
+Restart_Campaign,重新开局,Restart Campaign
+Turn_number_Display,回合：,Turn:
+Selected_Object_Display,选中对象：,Selected:
+Selected_Object_Display_None,无,None
+Planet_Name_Display,星球名称：,Planet Name:
+Deployment_Ratio,派兵比例：,Deployment Ratio:
+Deployment_Ratio_50%_Troops,50% 兵力,50% Troops
+Deployment_Ratio_All_Troops,全部兵力,All Troops
+Armament_Directive,军备指令,Armament Directive
+Construct_Heavy_Weapons,建造大型武器,Construct Heavy Weapons
+Initiate_Final_Measure,启动终结手段【威慑胜利】,Final Measure [Deterrence Victory]
+Weapon_Status,武器状态：无,Weapon Status: None
+Strategic_Opportunity,战略机遇 (等待中),Strategic Opportunity (Pending)
+Strategic_Opportunity_note,消耗30兵力，每10回合可发动一次,Costs 30 Troops, Usable Every 10 Turns
+End_Turn,结束回合,End Turn
+Authors_note,作者：Anklian和NoneTypes以及传奇的Deepseek和豆包,Authors: Anklian, NoneTypes, the legendary Deepseek & Doubao
+Game_End_Note,对局结束,Game End
+Final_Controlled_Planets,最终控制星球：,Final Controlled Planets:
+Enemy_Troops_Eliminated,累计消灭敌军兵力：,Total Enemy Troops Eliminated:
+Survived_Turns,存活回合：,Survived Turns:
+Overall_Match_Score,本局综合评分：,Overall Match Score:
+Spectate_note,观战,Spectate
+New_Match_note,再来一局,New Match
+Event_note,事件,Event
+Confirm_note,确定,Confirm
