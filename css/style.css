@@ -1,0 +1,29 @@
+*{margin:0;padding:0;box-sizing:border-box;font-family:Microsoft Yahei}
+body{background:#050512;color:#eee;display:flex;height:100vh;overflow:hidden}
+#canvasWrap{flex:1}
+canvas{background:#03030a;display:block}
+#uiPanel{width:340px;background:#101226;padding:14px;border-left:#333a70 solid 2px;display:flex;flex-direction:column}
+#uiContent{flex:1;overflow:auto}
+#signature{font-size:10px;color:#555;text-align:right;margin-top:8px;padding-top:8px;border-top:1px solid #333a70}
+h3{color:#80b8ff;margin-bottom:8px;font-size:16px}
+.info-line{margin:5px 0;font-size:13px}
+.diff-row{display:flex;gap:6px;align-items:center;margin:5px 0}
+.diff-row select{flex:1;padding:5px}
+.diff-row button{width:auto;padding:6px 10px;font-size:12px}
+hr{margin:8px 0;border-color:#333866}
+button{width:100%;padding:8px;margin:4px 0;border:none;border-radius:4px;cursor:pointer;font-weight:bold;font-size:13px}
+.btn-turn{background:#278833;color:#fff}
+.btn-weapon{background:#244699;color:#fff}
+.btn-endgame{background:#912828;color:#fff}
+.btn-deploy{background:#b8860b;color:#fff}
+select{width:100%;padding:5px;margin:4px 0;font-size:13px}
+.tips{font-size:11px;color:#aaa;line-height:1.5;margin-top:6px}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:100;}
+.modal-box{background:#121430;border:2px solid #ffdd44;padding:30px;min-width:420px;max-width:500px;text-align:center}
+.modal-box h2{color:#ffdd44;margin-bottom:12px}
+.modal-box p{color:#ddd;font-size:15px;margin:8px 0;line-height:1.5}
+.modal-box button{margin-top:16px;width:120px;padding:8px;background:#278833;color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:bold}
+.score-text{margin:10px 0;font-size:16px}
+.send-selector{display:flex;align-items:center;gap:10px;margin:6px 0}
+.send-selector label{font-size:13px;color:#aaa}
+.send-selector select{flex:1;padding:5px}
