@@ -8,9 +8,6 @@ map_size,星图规模：,Map Size:
 size_large,大（150星球）,Large (150 Planets)
 size_medium,中（100星球）,Medium (100 Planets)
 size_small,小（60星球）,Small (50 Planets)
-<<<<<<< Updated upstream
-game_mode_normal,普通模式,Normal Mode
-=======
 game_mode,游戏模式：,gamemode
 game_mode_normal,普通模式,normal
 game_mode_illuminate_assault,光能突袭,Illuminate Assault
@@ -44,4 +41,3 @@ spectate_note,观战,Spectate
 new_match_note,再来一局,New Match
 event_note,事件,Event
 confirm_note,确定,Confirm
->>>>>>> Stashed changes

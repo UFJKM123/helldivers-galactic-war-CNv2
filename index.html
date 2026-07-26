@@ -56,40 +56,6 @@ select{width:100%;padding:5px;margin:4px 0;font-size:13px}
         <div class="info-line" data-lang="menu.game_mode"></div>
         <select id="gameModeSelect">
             <option value="normal" selected data-lang="menu.game_mode_normal"></option>
-<<<<<<< Updated upstream
-            <option value="light_assault">光能突袭</option>
-            <option value="democracy_dark">民主晦暗</option>
-        </select>
-        <div class="diff-row">
-            <select id="difficultySelect" style="width:60%;font-size:12px">
-                <option value="easy">简单</option>
-                <option value="normal" selected>一般</option>
-                <option value="hard">困难</option>
-            </select>
-            <button id="randomStrengthBtn" class="btn-deploy" style="margin:0">🎲 随机强度</button>
-        </div>
-        <div class="info-line" id="strengthDisplay" style="font-size:11px;color:#ffcc88">各阵营强度：未分配</div>
-        <button onclick="restartGame()">重新开局</button>
-        <hr>
-        <div class="info-line">回合：<span id="turnNum">1</span></div>
-        <div class="info-line">选中对象：<span id="selText">无</span></div>
-        <div class="info-line">星球名称：<span id="selPlanetName">-</span></div>
-        <div class="send-selector"><label for="sendRatioSelect">派兵比例：</label><select id="sendRatioSelect"><option value="0.5">50% 兵力</option><option value="1.0" selected>全部兵力</option></select></div>
-        <hr>
-        <div class="info-line"><b>军备指令</b></div>
-        <button class="btn-weapon" id="buildWeaponBtn" data-lang="">建造/部署大型武器</button>
-        <button class="btn-endgame" id="buildFIN">启动终结手段【威慑胜利】</button>
-        <div class="info-line" id="weaponStatus">武器状态：无</div>
-        <div class="info-line" id="deterrenceStatus" style="display:none;color:#ffaa44"></div>
-        <hr>
-        <button class="btn-deploy" id="strategicDrawBtn">战略机遇 (等待中)</button>
-        <div class="tips" id="drawInfo" style="font-size:11px;color:#aaa">消耗30兵力，每10回合可发动一次</div>
-        <hr>
-        <button class="btn-turn" id="nextTurnBtn">结束回合</button>
-        <div class="tips" id="tipsPanel"></div>
-    </div>
-    <div id="signature">作者：Anklian和NoneTypes以及传奇的Deepseek和豆包</div>
-=======
             <option value="light_assault" data-lang="menu.game_mode_illuminate_assault"></option>
             <option value="democracy_dark" data-lang="menu.game_mode_democracy_obscured"></option>
         </select>
@@ -122,27 +88,10 @@ select{width:100%;padding:5px;margin:4px 0;font-size:13px}
         <div class="tips" id="tipsPanel"></div>
     </div>
     <div id="signature" data-lang="info.developer"></div>
->>>>>>> Stashed changes
 </div>
 
 <div class="modal" id="resultModal">
     <div class="modal-box">
-<<<<<<< Updated upstream
-        <h2 id="winTitle">对局结束</h2>
-        <div class="score-text" id="resultType"></div>
-        <div class="score-text" id="campVictoryMessage"></div>
-        <div class="score-text">最终控制星球：<span id="statPlanet">0</span></div>
-        <div class="score-text">累计消灭敌军兵力：<span id="statKills">0</span></div>
-        <div class="score-text">存活回合：<span id="statTurn">0</span></div>
-        <div class="score-text"><b>本局综合评分：<span id="finalScore">0</span></b></div>
-        <br>
-        <button id="watchBtn" style="display:none;background:#b8860b" onclick="startSpectate()">观战</button>
-        <button onclick="closeModal();restartGame()">再来一局</button>
-    </div>
-</div>
-<div class="modal" id="eventModal">
-    <div class="modal-box"><h2 id="eventTitle">事件</h2><p id="eventMessage"></p><button onclick="closeEventModal()">确定</button></div>
-=======
         <h2 id="winTitle" data-lang="menu.game_end_note"></h2>
         <div class="score-text" id="resultType"></div>
         <div class="score-text" id="campVictoryMessage"></div>
@@ -157,7 +106,6 @@ select{width:100%;padding:5px;margin:4px 0;font-size:13px}
 </div>
 <div class="modal" id="eventModal">
     <div class="modal-box"><h2 id="eventTitle" data-lang="menu.event_note"></h2><p id="eventMessage"></p><button onclick="closeEventModal()" data-lang="menu.confirm_note"></button></div>
->>>>>>> Stashed changes
 </div>
 
 <script>
