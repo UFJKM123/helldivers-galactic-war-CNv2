@@ -2,8 +2,6 @@
 
 [简体中文](https://github.com/UFJKM123/helldivers-galactic-war-CNv2/blob/main/README.md) | [English](https://github.com/UFJKM123/helldivers-galactic-war-CNv2/blob/main/README_en.md)
 
-## 绝地潜兵银河战争是一款基于《绝地潜兵》世界观开发的非盈利粉丝向同人小游戏，JS编程，主要使用Ai搭建。如果你喜欢这个游戏，欢迎加入测试群220540284一同测试和开发。
-
 ## 一款基于《绝地潜兵》世界观开发的非盈利粉丝向同人小游戏，JS编程，主要使用Ai搭建
 
 如果你喜欢这个游戏，欢迎加入测试群220540284一同测试和开发
