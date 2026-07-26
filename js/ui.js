@@ -1,10 +1,8 @@
 window.GameUI = (function() {
-    // DOM 缓存
     const dom = {};
     let eventQueue = [];
 
     function cacheDOM() {
-        // 核心面板
         dom.turnNum = document.getElementById("turnNum");
         dom.selText = document.getElementById("selText");
         dom.selPlanetName = document.getElementById("selPlanetName");
@@ -18,7 +16,6 @@ window.GameUI = (function() {
         dom.mapSizeSelect = document.getElementById("mapSizeSelect");
         dom.gameModeSelect = document.getElementById("gameModeSelect");
 
-        // 按钮
         dom.buildWeaponBtn = document.getElementById("buildWeaponBtn");
         dom.buildFINBtn = document.getElementById("buildFIN");
         dom.nextTurnBtn = document.getElementById("nextTurnBtn");
@@ -29,7 +26,6 @@ window.GameUI = (function() {
         dom.newGameBtn = document.getElementById("newGameBtn");
         dom.eventConfirmBtn = document.getElementById("eventConfirmBtn");
 
-        // 弹窗
         dom.resultModal = document.getElementById("resultModal");
         dom.eventModal = document.getElementById("eventModal");
         dom.winTitle = document.getElementById("winTitle");
@@ -42,12 +38,10 @@ window.GameUI = (function() {
         dom.eventTitle = document.getElementById("eventTitle");
         dom.eventMessage = document.getElementById("eventMessage");
 
-        // 画布
         dom.canvas = document.getElementById("starCanvas");
     }
 
     function bindEvents(engine) {
-        // 游戏控制按钮
         dom.restartBtn.addEventListener("click", () => handleRestart(engine));
         dom.nextTurnBtn.addEventListener("click", () => {
             engine.nextTurn();
@@ -73,7 +67,6 @@ window.GameUI = (function() {
             updateStrengthDisplay(engine);
         });
 
-        // 下拉框
         dom.sendRatioSelect.addEventListener("change", () => {
             engine.setSendRatio(dom.sendRatioSelect.value);
         });
@@ -82,7 +75,6 @@ window.GameUI = (function() {
         dom.gameModeSelect.addEventListener("change", () => handleRestart(engine));
         dom.difficultySelect.addEventListener("change", () => handleRestart(engine));
 
-        // 弹窗按钮
         dom.eventConfirmBtn.addEventListener("click", closeEventModal);
         dom.newGameBtn.addEventListener("click", () => {
             closeResultModal();
@@ -93,16 +85,14 @@ window.GameUI = (function() {
             engine.startSpectate();
         });
 
-        // 画布鼠标事件
         dom.canvas.addEventListener("mousedown", e => engine.handleMouseDown(e));
         window.addEventListener("mousemove", e => engine.handleMouseMove(e));
         window.addEventListener("mouseup", e => {
             const result = engine.handleMouseUp(e);
-            if(result) handleCanvasInteraction(result, engine);
+            if(result && result.msg) alert(result.msg);
             updateSelectionUI(engine);
         });
 
-        // 窗口缩放
         window.addEventListener("resize", () => {
             engine.resizeCanvas();
         });
@@ -120,12 +110,8 @@ window.GameUI = (function() {
         updateAllUI(engine);
     }
 
-    function handleCanvasInteraction(result, engine) {
-        if(result.msg) alert(result.msg);
-    }
-
-    // ========== UI 更新方法 ==========
     function updateAllUI(engine) {
+        if (!dom.turnNum) return;
         const state = engine.getPublicState();
         dom.turnNum.textContent = state.turn;
         updateSelectionUI(engine);
@@ -137,12 +123,12 @@ window.GameUI = (function() {
     }
 
     function updateSelectionUI(engine) {
+        if (!dom.selText) return;
         const state = engine.getPublicState();
         if(state.selectedWeapon){
-            const planet = engine.getCampWeaponDef(state.playerCampKey);
-            dom.selText.textContent = `武器：${planet.lwName}`;
-            const weaponPlanet = document.querySelector(`[data-uid="${state.selectedWeapon.planetId}"]`);
-            dom.selPlanetName.textContent = state.selectedWeapon.planetId ? "已选中武器" : "-";
+            const campDef = engine.getCampWeaponDef(state.playerCampKey);
+            dom.selText.textContent = `武器：${campDef.lwName}`;
+            dom.selPlanetName.textContent = "已选中武器";
         } else if(state.selectedPlanets.length > 0){
             dom.selText.textContent = `已选中 ${state.selectedPlanets.length} 颗星球`;
             dom.selPlanetName.textContent = state.selectedPlanets.map(p=>p.planetName).join('、');
@@ -153,10 +139,12 @@ window.GameUI = (function() {
     }
 
     function updateWeaponStatus(engine) {
+        if (!dom.weaponStatus) return;
         dom.weaponStatus.textContent = engine.getWeaponStatusText();
     }
 
     function updateDeterrenceStatus(engine) {
+        if (!dom.deterrenceStatus) return;
         const state = engine.getPublicState();
         if(state.deterrenceActive){
             dom.deterrenceStatus.style.display = "block";
@@ -167,20 +155,22 @@ window.GameUI = (function() {
     }
 
     function updateDrawButton(engine) {
+        if (!dom.strategicDrawBtn) return;
         const btnState = engine.getDrawButtonState();
         dom.strategicDrawBtn.textContent = btnState.text;
         dom.strategicDrawBtn.disabled = btnState.disabled;
     }
 
     function updateTips(engine) {
+        if (!dom.tipsPanel) return;
         dom.tipsPanel.textContent = engine.getTipsText();
     }
 
     function updateStrengthDisplay(engine) {
+        if (!dom.strengthDisplay) return;
         dom.strengthDisplay.textContent = engine.getStrengthDisplayText();
     }
 
-    // ========== 弹窗控制 ==========
     function showEventModal(title, message) {
         if(dom.eventModal.style.display === "flex"){
             eventQueue.push({title, message});
@@ -217,18 +207,19 @@ window.GameUI = (function() {
         dom.resultModal.style.display = "none";
     }
 
-    function init(engine) {
-        cacheDOM();
-        bindEvents(engine);
+    function refresh(engine) {
         updateAllUI(engine);
-
-        // 注入引擎回调
-        engine.init(dom.canvas, {
-            onEvent: showEventModal,
-            onGameEnd: showResultModal,
-            onStateChange: () => updateAllUI(engine)
-        });
     }
 
-    return { init, showEventModal, showResultModal };
+    function init(engine) {
+        cacheDOM();
+        if (!dom.canvas) {
+            console.error("UI初始化失败：找不到画布元素");
+            return;
+        }
+        bindEvents(engine);
+        updateAllUI(engine);
+    }
+
+    return { init, refresh, showEventModal, showResultModal };
 })();

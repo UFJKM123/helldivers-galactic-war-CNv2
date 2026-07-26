@@ -1,7 +1,6 @@
 window.GameEngine = (function() {
     const { MAP_SIZES, CAMPS, CAMP_KEYS, STRATEGIC_EVENTS, PLANET_NAME_LIST } = GameConfig;
 
-    // 游戏状态
     const state = {
         canvas: null,
         ctx: null,
@@ -37,10 +36,10 @@ window.GameEngine = (function() {
         boxStartX: 0,
         boxStartY: 0,
         boxEndX: 0,
-        boxEndY: 0
+        boxEndY: 0,
+        sendRatio: 1.0
     };
 
-    // 事件回调（UI层注入）
     let callbacks = {
         onEvent: null,
         onGameEnd: null,
@@ -51,6 +50,7 @@ window.GameEngine = (function() {
         state.canvas = canvas;
         state.ctx = canvas.getContext("2d");
         callbacks = { ...callbacks, ...cb };
+        resizeCanvas();
     }
 
     function getDifficultyParams() {
@@ -62,12 +62,15 @@ window.GameEngine = (function() {
     }
 
     function resizeCanvas() {
+        if (!state.canvas || !state.ctx) return;
         state.canvas.width = window.innerWidth - 340;
         state.canvas.height = window.innerHeight;
         if(state.planets.length) render();
     }
 
     function restart(options = {}) {
+        resizeCanvas();
+
         state.playerCampKey = options.playerCampKey || "EARTH";
         state.difficulty = options.difficulty || "normal";
         state.gameMode = options.gameMode || "normal";
@@ -214,6 +217,7 @@ window.GameEngine = (function() {
     }
 
     function render() {
+        if (!state.ctx || !state.canvas) return;
         const ctx = state.ctx;
         ctx.clearRect(0,0,state.canvas.width,state.canvas.height);
 
@@ -396,7 +400,6 @@ window.GameEngine = (function() {
         return false;
     }
 
-    // 鼠标交互逻辑
     function handleMouseDown(e) {
         if(state.spectateMode) return;
         if(e.button !== 0) return;
@@ -958,7 +961,6 @@ window.GameEngine = (function() {
     function nextTurn() {
         const diff = getDifficultyParams();
 
-        // 部署武器衰减效果
         state.weapons.forEach(w=>{
             if(w.type==='deploy' && w.decay>0){
                 const p = state.planets.find(p=>p.uid===w.planetId);
@@ -966,7 +968,6 @@ window.GameEngine = (function() {
             }
         });
 
-        // AI 调兵 + 行动
         CAMP_KEYS.filter(ck=>ck!==state.playerCampKey).forEach(ck=>aiTransferTroops(ck));
         state.planets.forEach(p=>{
             if(p.camp && p.camp!==state.playerCampKey){
@@ -974,13 +975,11 @@ window.GameEngine = (function() {
             }
         });
 
-        // 威慑期间检查母星
         if(state.deterrenceActive){
             const playerHome = state.planets.find(p=>p.isHome && p.camp===state.playerCampKey);
             if(!playerHome){ endGame("defeat"); return; }
         }
 
-        // 兵力增长
         if(!state.deterrenceActive){
             state.planets.forEach(p=>{
                 if(p.camp===state.playerCampKey) p.troop += 1;
@@ -992,14 +991,12 @@ window.GameEngine = (function() {
             if(p.camp && p.camp!==state.playerCampKey && p.resource) p.troop += 2;
         });
 
-        // AI 强度加成
         CAMP_KEYS.forEach(ck=>{
             if(ck!==state.playerCampKey && state.aiStrengthFactors[ck]){
                 state.planets.forEach(p=>{ if(p.camp===ck) p.troop += state.aiStrengthFactors[ck]; });
             }
         });
 
-        // 困难难度额外增长
         if(diff.aiExtraGrowth){
             state.planets.forEach(p=>{ if(p.camp && p.camp!==state.playerCampKey) p.troop += 1; });
         }
@@ -1007,10 +1004,8 @@ window.GameEngine = (function() {
         aiWeaponLogic();
         checkPowerBalance();
 
-        // 特殊模式事件
         if(state.gameMode==="light_assault" && state.turn === 20){ lightAssaultEvent(); }
 
-        // 威慑倒计时
         if(state.deterrenceActive){
             state.deterrenceTurnsLeft--;
             if(state.deterrenceTurnsLeft <= 0){ endGame("deterrence"); return; }
@@ -1019,7 +1014,6 @@ window.GameEngine = (function() {
         checkHomeFallEvents();
         if(!state.spectateMode) checkDefeat();
 
-        // 回合推进
         state.weaponMovedThisTurn = false;
         state.turn++;
         state.selectedWeapon = null;
@@ -1043,7 +1037,6 @@ window.GameEngine = (function() {
         });
         if(targets.length===0) return;
 
-        // 优先打玩家母星，其次资源星
         const playerHome = state.planets.find(p=>p.isHome && p.camp===state.playerCampKey);
         const homeTarget = targets.find(t=>t.uid===playerHome?.uid);
         if(homeTarget) targets = [homeTarget];
@@ -1063,7 +1056,6 @@ window.GameEngine = (function() {
         const send = Math.floor(ownPlanet.troop * ratio);
         ownPlanet.troop -= send;
 
-        // 武器加成计算
         const targetWeapons = state.weapons.filter(w=>w.planetId===target.uid);
         let guardBonus = 0, weaken = 0;
         targetWeapons.forEach(w=>{
@@ -1178,7 +1170,6 @@ window.GameEngine = (function() {
         }
     }
 
-    // 对外暴露的只读状态
     function getPublicState() {
         return {
             turn: state.turn,
@@ -1236,7 +1227,6 @@ window.GameEngine = (function() {
         }
     }
 
-    // 公共接口
     return {
         init,
         restart,
