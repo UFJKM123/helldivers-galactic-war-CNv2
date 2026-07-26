@@ -441,11 +441,21 @@ window.GameEngine = (function() {
             const minY = Math.min(state.boxStartY, state.boxEndY);
             const maxY = Math.max(state.boxStartY, state.boxEndY);
             
-            state.selectedPlanets = state.planets.filter(p=>
+            const newSelection = state.planets.filter(p=>
                 p.camp === state.playerCampKey &&
                 p.x >= minX && p.x <= maxX &&
                 p.y >= minY && p.y <= maxY
             );
+
+            // 按住Shift追加选中，否则直接替换
+            if(e.shiftKey){
+                const uidSet = new Set(state.selectedPlanets.map(p=>p.uid));
+                newSelection.forEach(p=>uidSet.add(p.uid));
+                state.selectedPlanets = state.planets.filter(p=>uidSet.has(p.uid));
+            } else {
+                state.selectedPlanets = newSelection;
+            }
+
             state.hasDragged = false;
             render();
             return { type:"selection", planets: state.selectedPlanets };
@@ -476,6 +486,20 @@ window.GameEngine = (function() {
             return { type:"clear" };
         }
 
+        // Shift+点击己方星球：逐个加减选中
+        if(evt.shiftKey && hitPlanet.camp === state.playerCampKey){
+            const idx = state.selectedPlanets.findIndex(p=>p.uid === hitPlanet.uid);
+            if(idx > -1){
+                state.selectedPlanets.splice(idx, 1); // 已选中就取消
+            } else {
+                state.selectedPlanets.push(hitPlanet); // 没选中就加上
+            }
+            render();
+            return { type:"selection", planets: state.selectedPlanets };
+        }
+
+        if(state.selectedWeapon){
+
         if(state.selectedWeapon){
             return handleWeaponMove(hitPlanet);
         }
@@ -491,30 +515,27 @@ window.GameEngine = (function() {
         }
     }
 
-    function handleWeaponMove(targetPlanet) {
+        function handleWeaponMove(targetPlanet) {
         if(state.selectedWeapon.type !== 'mobile'){
             state.selectedWeapon = null;
             render();
-            return { success:false, msg:"阴霾和寂域不可移动" };
+            return { success:false };
         }
+        // 本回合已移动则弹出提示
         if(state.weaponMovedThisTurn){
             state.selectedWeapon = null;
             render();
             return { success:false, msg:"本回合已移动过武器，每回合只能移动一次" };
         }
 
-        const linkCheck = state.links.find(l=>
-            (l.a.uid===state.selectedWeapon.planetId && l.b.uid===targetPlanet.uid) ||
-            (l.b.uid===state.selectedWeapon.planetId && l.a.uid===targetPlanet.uid)
-        );
-        if(!linkCheck){
-            state.selectedWeapon = null;
-            render();
-            return { success:false, msg:"只能移动到相邻星球" };
+        // 全图任意星球可移动，取消相邻限制
+        state.selectedWeapon.planetId = targetPlanet.uid;
+
+        // 仅敌方/中立扣20兵，己方不扣，修复误扣bug
+        if(targetPlanet.camp !== state.playerCampKey){
+            targetPlanet.troop = Math.max(1, targetPlanet.troop - 20);
         }
 
-        state.selectedWeapon.planetId = targetPlanet.uid;
-        targetPlanet.troop = Math.max(1, targetPlanet.troop - 20);
         state.weaponMovedThisTurn = true;
         state.selectedWeapon = null;
         state.selectedPlanets = [];
@@ -522,7 +543,7 @@ window.GameEngine = (function() {
         return { success:true };
     }
 
-    function handleSinglePlanetAction(target) {
+        function handleSinglePlanetAction(target) {
         const source = state.selectedPlanets[0];
         if(source.uid === target.uid){
             state.selectedPlanets = [];
@@ -535,18 +556,59 @@ window.GameEngine = (function() {
             return { success:false, msg:"请选中己方星球操作！" };
         }
 
-        const linkCheck = state.links.find(l=>
-            (l.a.uid===source.uid && l.b.uid===target.uid) ||
-            (l.b.uid===source.uid && l.a.uid===target.uid)
-        );
-        if(!linkCheck) return { success:false, msg:"只能进攻相邻星球！" };
-        if(state.blockedLinks.has(linkCheck.idPair)) return { success:false, msg:"航道被封锁！" };
-
+        // 己方星球调兵：走补给线连通逻辑
         if(target.camp === state.playerCampKey){
+            if(!arePlayerPlanetsConnected(source, target)){
+                return { success:false, msg:"没有连通的补给线，无法调兵" };
+            }
             moveTroops(source, target);
-        } else {
+        }
+        // 进攻敌方/中立：复用框选的连通进攻逻辑
+        else {
+            const ratio = getSendRatio();
+            // 找到目标相邻的所有己方前线星球
+            const frontier = state.planets.filter(p =>
+                p.camp === state.playerCampKey &&
+                state.links.some(ln =>
+                    (ln.a.uid === p.uid && ln.b.uid === target.uid) ||
+                    (ln.b.uid === p.uid && ln.a.uid === target.uid)
+                )
+            );
+            // 源星球能连通到任意一颗前线星球才能进攻
+            const canReach = frontier.some(f => arePlayerPlanetsConnected(source, f));
+            if(!canReach){
+                return { success:false, msg:"没有连通的进攻路线" };
+            }
             if(source.troop <= 0) return { success:false, msg:"没有兵力！" };
-            executeAttack(source, target);
+
+            const sendTroop = Math.floor(source.troop * ratio);
+            source.troop -= sendTroop;
+
+            // 计算目标防御加成
+            const targetWeapons = state.weapons.filter(w=>w.planetId===target.uid);
+            let guardBonus = 0, weakenEffect = 0;
+            targetWeapons.forEach(w=>{
+                if(target.camp === w.camp){
+                    guardBonus += w.guardBonus;
+                    weakenEffect += w.weaken;
+                }
+            });
+
+            const effectiveAttack = Math.max(0, sendTroop - weakenEffect);
+            const defendTroop = target.troop + guardBonus;
+            const result = effectiveAttack - defendTroop;
+
+            if(result > 0){
+                state.statKills += target.troop;
+                const oldCamp = target.camp;
+                target.camp = state.playerCampKey;
+                target.troop = result;
+                onPlanetCaptured(target, oldCamp, state.playerCampKey);
+                checkConquestWin();
+            } else {
+                state.statKills += Math.min(sendTroop, target.troop);
+                target.troop = Math.max(1, target.troop - sendTroop);
+            }
             checkDefeat();
         }
 
