@@ -3,19 +3,25 @@ window.GameUI = (function() {
     let eventQueue = [];
 
     function cacheDOM() {
+        // 顶部信息显示
         dom.turnNum = document.getElementById("turnNum");
         dom.selText = document.getElementById("selText");
         dom.selPlanetName = document.getElementById("selPlanetName");
+        
+        // 武器与状态
         dom.weaponStatus = document.getElementById("weaponStatus");
         dom.deterrenceStatus = document.getElementById("deterrenceStatus");
         dom.tipsPanel = document.getElementById("tipsPanel");
         dom.strengthDisplay = document.getElementById("strengthDisplay");
+        
+        // 下拉选择框
         dom.sendRatioSelect = document.getElementById("sendRatioSelect");
         dom.difficultySelect = document.getElementById("difficultySelect");
         dom.campSelect = document.getElementById("campSelect");
         dom.mapSizeSelect = document.getElementById("mapSizeSelect");
         dom.gameModeSelect = document.getElementById("gameModeSelect");
 
+        // 所有按钮
         dom.buildWeaponBtn = document.getElementById("buildWeaponBtn");
         dom.buildFINBtn = document.getElementById("buildFIN");
         dom.nextTurnBtn = document.getElementById("nextTurnBtn");
@@ -26,6 +32,7 @@ window.GameUI = (function() {
         dom.newGameBtn = document.getElementById("newGameBtn");
         dom.eventConfirmBtn = document.getElementById("eventConfirmBtn");
 
+        // 弹窗相关
         dom.resultModal = document.getElementById("resultModal");
         dom.eventModal = document.getElementById("eventModal");
         dom.winTitle = document.getElementById("winTitle");
@@ -38,10 +45,12 @@ window.GameUI = (function() {
         dom.eventTitle = document.getElementById("eventTitle");
         dom.eventMessage = document.getElementById("eventMessage");
 
+        // 画布
         dom.canvas = document.getElementById("starCanvas");
     }
 
     function bindEvents(engine) {
+        // 游戏控制按钮
         dom.restartBtn.addEventListener("click", () => handleRestart(engine));
         dom.nextTurnBtn.addEventListener("click", () => {
             engine.nextTurn();
@@ -67,6 +76,7 @@ window.GameUI = (function() {
             updateStrengthDisplay(engine);
         });
 
+        // 下拉框事件
         dom.sendRatioSelect.addEventListener("change", () => {
             engine.setSendRatio(dom.sendRatioSelect.value);
         });
@@ -75,6 +85,7 @@ window.GameUI = (function() {
         dom.gameModeSelect.addEventListener("change", () => handleRestart(engine));
         dom.difficultySelect.addEventListener("change", () => handleRestart(engine));
 
+        // 弹窗按钮
         dom.eventConfirmBtn.addEventListener("click", closeEventModal);
         dom.newGameBtn.addEventListener("click", () => {
             closeResultModal();
@@ -85,6 +96,7 @@ window.GameUI = (function() {
             engine.startSpectate();
         });
 
+        // 画布鼠标交互
         dom.canvas.addEventListener("mousedown", e => engine.handleMouseDown(e));
         window.addEventListener("mousemove", e => engine.handleMouseMove(e));
         window.addEventListener("mouseup", e => {
@@ -93,6 +105,7 @@ window.GameUI = (function() {
             updateSelectionUI(engine);
         });
 
+        // 窗口缩放
         window.addEventListener("resize", () => {
             engine.resizeCanvas();
         });
@@ -110,41 +123,54 @@ window.GameUI = (function() {
         updateAllUI(engine);
     }
 
+    // ========== 界面更新核心方法 ==========
     function updateAllUI(engine) {
-        if (!dom.turnNum) return;
         const state = engine.getPublicState();
-        dom.turnNum.textContent = state.turn;
+        // 回合数
+        if(dom.turnNum) dom.turnNum.textContent = state.turn;
+        // 选中信息
         updateSelectionUI(engine);
+        // 武器状态
         updateWeaponStatus(engine);
+        // 战略机遇按钮
         updateDrawButton(engine);
+        // 底部提示
         updateTips(engine);
+        // 阵营强度
         updateStrengthDisplay(engine);
+        // 威慑状态
         updateDeterrenceStatus(engine);
     }
 
     function updateSelectionUI(engine) {
-        if (!dom.selText) return;
+        if(!dom.selText || !dom.selPlanetName) return;
         const state = engine.getPublicState();
+
+        // 选中了武器
         if(state.selectedWeapon){
             const campDef = engine.getCampWeaponDef(state.playerCampKey);
-            dom.selText.textContent = `武器：${campDef.lwName}`;
+            dom.selText.textContent = "武器：" + campDef.lwName;
             dom.selPlanetName.textContent = "已选中武器";
-        } else if(state.selectedPlanets.length > 0){
-            dom.selText.textContent = `已选中 ${state.selectedPlanets.length} 颗星球`;
+        }
+        // 选中了星球
+        else if(state.selectedPlanets.length > 0){
+            dom.selText.textContent = "已选中 " + state.selectedPlanets.length + " 颗星球";
             dom.selPlanetName.textContent = state.selectedPlanets.map(p=>p.planetName).join('、');
-        } else {
+        }
+        // 什么都没选
+        else {
             dom.selText.textContent = "无";
             dom.selPlanetName.textContent = "-";
         }
     }
 
     function updateWeaponStatus(engine) {
-        if (!dom.weaponStatus) return;
+        if(!dom.weaponStatus) return;
         dom.weaponStatus.textContent = engine.getWeaponStatusText();
     }
 
     function updateDeterrenceStatus(engine) {
-        if (!dom.deterrenceStatus) return;
+        if(!dom.deterrenceStatus) return;
         const state = engine.getPublicState();
         if(state.deterrenceActive){
             dom.deterrenceStatus.style.display = "block";
@@ -155,22 +181,23 @@ window.GameUI = (function() {
     }
 
     function updateDrawButton(engine) {
-        if (!dom.strategicDrawBtn) return;
+        if(!dom.strategicDrawBtn) return;
         const btnState = engine.getDrawButtonState();
         dom.strategicDrawBtn.textContent = btnState.text;
         dom.strategicDrawBtn.disabled = btnState.disabled;
     }
 
     function updateTips(engine) {
-        if (!dom.tipsPanel) return;
+        if(!dom.tipsPanel) return;
         dom.tipsPanel.textContent = engine.getTipsText();
     }
 
     function updateStrengthDisplay(engine) {
-        if (!dom.strengthDisplay) return;
+        if(!dom.strengthDisplay) return;
         dom.strengthDisplay.textContent = engine.getStrengthDisplayText();
     }
 
+    // ========== 弹窗控制 ==========
     function showEventModal(title, message) {
         if(dom.eventModal.style.display === "flex"){
             eventQueue.push({title, message});
@@ -207,13 +234,15 @@ window.GameUI = (function() {
         dom.resultModal.style.display = "none";
     }
 
+    // 供引擎回调的刷新方法
     function refresh(engine) {
         updateAllUI(engine);
     }
 
+    // 初始化入口
     function init(engine) {
         cacheDOM();
-        if (!dom.canvas) {
+        if(!dom.canvas){
             console.error("UI初始化失败：找不到画布元素");
             return;
         }
