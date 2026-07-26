@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>绝地潜兵星图领主 终极版</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Microsoft Yahei}
+body{background:#050512;color:#eee;display:flex;height:100vh;overflow:hidden}
+#canvasWrap{flex:1}
+canvas{background:#03030a;display:block}
+#uiPanel{width:340px;background:#101226;padding:14px;border-left:#333a70 solid 2px;overflow:auto}
+h3{color:#80b8ff;margin-bottom:12px}
+.info-line{margin:7px 0;font-size:14px}
+hr{margin:12px 0;border-color:#333866}
+button{width:100%;padding:9px;margin:5px 0;border:none;border-radius:5px;cursor:pointer;font-weight:bold}
+.btn-turn{background:#278833;color:#fff}
+.btn-weapon{background:#244699;color:#fff}
+.btn-endgame{background:#912828;color:#fff}
+.btn-deploy{background:#b8860b;color:#fff}
+select{width:100%;padding:6px;margin:6px 0}
+.tips{font-size:12px;color:#aaa;line-height:1.6;margin-top:10px}
+.modal{
+    position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);
+    display:none;align-items:center;justify-content:center;
+}
+.modal-box{
+    background:#121430;border:2px solid #ffdd44;padding:32px;min-width:460px;text-align:center
+}
+.score-text{margin:10px 0;font-size:16px}
+.send-selector{display:flex;align-items:center;gap:10px;margin:8px 0}
+.send-selector label{font-size:14px;color:#aaa}
+.send-selector select{flex:1;padding:6px}
+</style>
+</head>
+<body>
+<div id="canvasWrap">
+    <canvas id="starCanvas"></canvas>
+</div>
+<div id="uiPanel">
+    <h3>星图领主 · 终极版</h3>
+    <div class="info-line">选择操控阵营：</div>
+    <select id="campSelect">
+        <option value="EARTH">超级地球｜母星：超级地球【蓝】</option>
+        <option value="TERM">终结族｜母星：佛里主星【黄】</option>
+        <option value="LIGHT">光能者｜母星：西斯【紫】</option>
+        <option value="ROBOT">机器人｜母星：生化斯坦【红】</option>
+    </select>
+    <div class="info-line">难度选择：</div>
+    <select id="difficultySelect">
+        <option value="easy">简单</option>
+        <option value="normal" selected>一般</option>
+        <option value="hard">困难</option>
+    </select>
+    <button onclick="restartGame()">重新开局（应用设置）</button>
+    <hr>
+    <div class="info-line">回合：<span id="turnNum">1</span></div>
+    <div class="info-line">选中对象：<span id="selText">无</span></div>
+    <div class="info-line">星球名称：<span id="selPlanetName">-</span></div>
+    <hr>
+    <div class="send-selector">
+        <label for="sendRatioSelect">派兵比例：</label>
+        <select id="sendRatioSelect">
+            <option value="0.5">50% 兵力</option>
+            <option value="1.0">全部兵力</option>
+        </select>
+    </div>
+    <hr>
+    <div class="info-line"><b>军备指令</b></div>
+    <button class="btn-weapon" id="buildWeaponBtn">建造/部署大型武器</button>
+    <button class="btn-deploy" id="moveWeaponBtn" disabled>移动武器 (选中移动型武器)</button>
+    <button class="btn-endgame" id="buildFIN">启动终结手段【威慑胜利】</button>
+    <div class="info-line" id="weaponStatus">武器状态：无</div>
+    <hr>
+    <button class="btn-turn" id="nextTurnBtn">结束回合</button>
+    <div class="tips" id="tipsPanel">
+        <!-- 动态提示将由JS更新 -->
+    </div>
+</div>
+
+<!-- 结算弹窗 -->
+<div class="modal" id="resultModal">
+    <div class="modal-box">
+        <h2 id="winTitle">对局结束</h2>
+        <div class="score-text" id="resultType"></div>
+        <div class="score-text">最终控制星球：<span id="statPlanet">0</span></div>
+        <div class="score-text">累计消灭敌军兵力：<span id="statKills">0</span></div>
+        <div class="score-text">存活回合：<span id="statTurn">0</span></div>
+        <div class="score-text"><b>本局综合评分：<span id="finalScore">0</span></b></div>
+        <br>
+        <button onclick="closeModal();restartGame()">再来一局</button>
+    </div>
+</div>
+
+<script>
+// ==================== 配置 ====================
+const CONFIG = {
+    planetTotal: 150,
+    canvasPad: 60,
+    homeInitTroop: 70,
+    buildMoveCost: 180,   // 移动型武器建造费
+    deployCost: 150,      // 部署型武器每次消耗
+    finalCost: 320
+};
+
+const CAMPS = {
+    EARTH:{
+        name:"超级地球", color:"#4499ff", homeName:"超级地球",
+        lwName:"DSS轨道平台", finName:"和平之星",
+        weaponType:"mobile",  // 移动型
+        guardBonus: 25, weaken: 15
+    },
+    TERM:{
+        name:"终结族", color:"#ffcc22", homeName:"佛里主星",
+        lwName:"阴霾", finName:"协同信息素",
+        weaponType:"deploy",  // 部署型
+        guardBonus: 20, weaken: 15, decay: 5
+    },
+    LIGHT:{
+        name:"光能者", color:"#9944dd", homeName:"西斯",
+        lwName:"寂域", finName:"黑洞发生器",
+        weaponType:"deploy",
+        guardBonus: 20, weaken: 15, decay: 5
+    },
+    ROBOT:{
+        name:"机器人", color:"#dd2222", homeName:"生化斯坦",
+        lwName:"ASS攻击阵列", finName:"死星光束",
+        weaponType:"mobile",
+        guardBonus: 25, weaken: 15
+    }
+};
+const CAMP_KEYS = ["EARTH","TERM","LIGHT","ROBOT"];
+
+const PLANET_NAME_LIST = [
+    "奥肖恩星","莫里迪亚","杜马提尔","克伦达苏","艾维斯","莫拉戴什",
+    "Vortis Prime","Lythos","Xelara","Valtheon","Litharis","Zephyra",
+    "Tarsis","Voraq","Nyxar","Korvath","Eryndor","Quorath","Vespera",
+    "Pyronis","Galantis","Tyros","Nevrion","Serenis","Thalron","Voxis",
+    "Zerith","Crystalis","Ilyria","Vorrath","Vexilon","Ydris","Varnis-12",
+    "Cyronis","Florentis","Zetar","Morvoth","Illyricon","Tarvok","Virex",
+    "Xenonis","Talvoria","Valtor-5","Phyraxis","Therion","Dracarys","Velkros",
+    "Calyx-3","Vordara","Esthira","Mirandus","Zerka-9","Promyra","Vethora",
+    "Tyralon","Zaroth","Pylos","Erythos","Nydor","Valtrex","Zelaron","Xyphor",
+    "Crithon","Velaris","Draxion","Xovara","Quillon","Lysandra","Virexia",
+    "Telmara","Grython","Zolaris","Voltoris","Nexara","Aurora Station",
+    "Stellara","Lunaris","Solara","Nebulon","Celestine","Orionis","Eclipsia",
+    "Arcturus","Bellatrix","Capella","Deneb","Elnath","Fomalhaut",
+    "Gacrux","Hadar","Izar","Jabbah","Kaus","Lesath","Marfik",
+    "Nekkar","Ophelia","Procyon","Rigel","Sirius","Thuban","Vega",
+    "Wasat","Zaniah","Algenib","Baten","Cursa","Diphda","Edasich",
+    "Furud","Gomeisa","Homam","Iklil","Jih","Kraz","Lynx",
+    "Markab","Navi","Orion","Peacock","Rana","Sabik","Tania"
+];
+
+// ==================== 全局状态 ====================
+let canvas,ctx;
+let planets = [];
+let links = [];
+let blockedLinks = new Set();
+let playerCampKey = "EARTH";
+let difficulty = "normal";
+let turn = 1;
+let selectedPlanet = null;
+let selectedWeapon = null;      // 当前选中的武器对象（用于移动）
+let deployMode = null;          // {type:'deploy', fromPlanet} 等待选择目标
+let weapons = [];               // 所有大型武器实例
+let statKills = 0;
+
+// 武器实例结构：
+// { id, camp, type('mobile'/'deploy'), planetId, guardBonus, weaken, decay }
+// 移动型 type='mobile'，部署型 type='deploy'
+
+// DOM
+let turnDom,selDom,weaponDom,selPlanetNameDom;
+let resultModal;
+let sendRatioSelect, difficultySelect;
+let buildWeaponBtn, moveWeaponBtn, tipsPanel;
+
+window.onload = init;
+window.addEventListener("resize",resizeCanvas);
+
+function init(){
+    canvas = document.getElementById("starCanvas");
+    ctx = canvas.getContext("2d");
+    turnDom = document.getElementById("turnNum");
+    selDom = document.getElementById("selText");
+    selPlanetNameDom = document.getElementById("selPlanetName");
+    weaponDom = document.getElementById("weaponStatus");
+    resultModal = document.getElementById("resultModal");
+    sendRatioSelect = document.getElementById("sendRatioSelect");
+    difficultySelect = document.getElementById("difficultySelect");
+    buildWeaponBtn = document.getElementById("buildWeaponBtn");
+    moveWeaponBtn = document.getElementById("moveWeaponBtn");
+    tipsPanel = document.getElementById("tipsPanel");
+
+    buildWeaponBtn.onclick = onBuildWeapon;
+    moveWeaponBtn.onclick = onMoveWeapon;
+    document.getElementById("buildFIN").onclick = activateFinal;
+    document.getElementById("nextTurnBtn").onclick = nextTurn;
+    canvas.onclick = canvasClick;
+
+    resizeCanvas();
+    restartGame();
+    updateTips();
+}
+
+function resizeCanvas(){
+    canvas.width = window.innerWidth - 340;
+    canvas.height = window.innerHeight;
+    if(planets.length>0) render();
+}
+
+function restartGame(){
+    playerCampKey = document.getElementById("campSelect").value;
+    difficulty = difficultySelect.value;
+    turn = 1;
+    selectedPlanet = null;
+    selectedWeapon = null;
+    deployMode = null;
+    statKills = 0;
+    blockedLinks.clear();
+    planets = [];
+    links = [];
+    weapons = [];
+
+    turnDom.textContent = turn;
+    selDom.textContent = "无";
+    selPlanetNameDom.textContent = "-";
+    updateWeaponStatusUI();
+    resultModal.style.display = "none";
+    sendRatioSelect.value = "0.5";
+    moveWeaponBtn.disabled = true;
+
+    generateGalaxy();
+    updateTips();
+    render();
+}
+
+function getDifficultyParams(){
+    switch(difficulty){
+        case 'easy': return { neutMin:4, neutMax:14, aiThreshold:30, aiExtraGrowth:false };
+        case 'hard': return { neutMin:12, neutMax:38, aiThreshold:8, aiExtraGrowth:true };
+        default: return { neutMin:6, neutMax:22, aiThreshold:16, aiExtraGrowth:false };
+    }
+}
+
+function generateGalaxy(){
+    const W = canvas.width;
+    const H = canvas.height;
+    const pad = CONFIG.canvasPad;
+    const homePos = [
+        {x:pad, y:pad},
+        {x:W-pad, y:pad},
+        {x:pad, y:H-pad},
+        {x:W-pad, y:H-pad}
+    ];
+
+    CAMP_KEYS.forEach((ck,idx)=>{
+        const camp = CAMPS[ck];
+        planets.push({
+            x:homePos[idx].x, y:homePos[idx].y,
+            camp:ck, isHome:true, troop:CONFIG.homeInitTroop,
+            planetName:camp.homeName,
+            uid: Math.random().toString(36).slice(2,10)
+        });
+    });
+
+    const diff = getDifficultyParams();
+    let namePool = [...PLANET_NAME_LIST].sort(()=>Math.random()-0.5);
+    const totalNormal = CONFIG.planetTotal - 4;
+
+    for(let i=0;i<totalNormal;i++){
+        let x,y;
+        do{
+            x = pad + Math.random()*(W-pad*2);
+            y = pad + Math.random()*(H-pad*2);
+        }while(planets.some(p=>Math.hypot(p.x-x,p.y-y)<40));
+
+        const initT = Math.floor(Math.random()*(diff.neutMax-diff.neutMin)) + diff.neutMin;
+        let pname = namePool.length>0 ? namePool.shift() : "星球-"+i;
+        planets.push({
+            x,y, camp:null, isHome:false, troop:initT,
+            planetName:pname,
+            uid: Math.random().toString(36).slice(2,10)
+        });
+    }
+    buildConnections();
+}
+
+function buildConnections(){
+    links = [];
+    planets.forEach(p=>{
+        const others = planets.filter(o=>o.uid!==p.uid)
+            .sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y))
+            .slice(0,5);
+        others.forEach(t=>{
+            const idPair = [p.uid,t.uid].sort().join("_");
+            if(!links.some(l=>l.idPair===idPair)){
+                links.push({a:p,b:t,idPair});
+            }
+        });
+    });
+}
+
+// ==================== 渲染 ====================
+function render(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // 航道
+    links.forEach(ln=>{
+        const isBlock = blockedLinks.has(ln.idPair);
+        ctx.beginPath();
+        ctx.moveTo(ln.a.x,ln.a.y);
+        ctx.lineTo(ln.b.x,ln.b.y);
+        ctx.strokeStyle = isBlock ? "#772222":"#283060";
+        ctx.lineWidth = isBlock ? 2:1;
+        ctx.stroke();
+    });
+    // 星球
+    planets.forEach(p=>{
+        const r = p.isHome?16:10;
+        const campData = p.camp?CAMPS[p.camp]:null;
+        // 选中高亮
+        if(selectedPlanet && selectedPlanet.uid===p.uid){
+            ctx.beginPath();
+            ctx.arc(p.x,p.y,r+5,0,Math.PI*2);
+            ctx.strokeStyle="#fff"; ctx.lineWidth=2; ctx.stroke();
+        }
+        // 星球本体
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,r,0,Math.PI*2);
+        ctx.fillStyle = campData?campData.color:"#505050";
+        ctx.fill();
+        if(p.isHome){
+            ctx.beginPath();
+            ctx.arc(p.x,p.y,r+3,0,Math.PI*2);
+            ctx.strokeStyle="#ffdd00"; ctx.lineWidth=2; ctx.stroke();
+        }
+        // 兵力数字
+        ctx.fillStyle="#fff";
+        ctx.font="bold 11px Arial";
+        ctx.textAlign="center";
+        ctx.fillText(p.troop, p.x, p.y+r+13);
+        // 星球名称
+        ctx.fillStyle="#aaa";
+        ctx.font="8px Microsoft Yahei";
+        ctx.fillText(p.planetName, p.x, p.y+r+22);
+        // 绘制武器标记
+        const wpns = weapons.filter(w=>w.planetId===p.uid);
+        if(wpns.length>0){
+            let yOff = p.y - r - 6;
+            wpns.forEach(w=>{
+                ctx.fillStyle = w.camp===playerCampKey ? "#ffd700":"#ff4444";
+                ctx.font="14px Arial";
+                ctx.fillText(w.type==='mobile'?'◈':'⬢', p.x, yOff);
+                yOff -= 14;
+            });
+        }
+    });
+
+    // 若处于部署模式，高亮可部署的星球（任选）
+    if(deployMode){
+        ctx.strokeStyle = "#00ff00";
+        ctx.lineWidth = 1;
+        planets.forEach(p=>{
+            if(p.uid !== deployMode.fromPlanet.uid){
+                ctx.beginPath();
+                ctx.arc(p.x,p.y,18,0,Math.PI*2);
+                ctx.stroke();
+            }
+        });
+    }
+}
+
+// ==================== 武器系统 ====================
+function getCampWeaponDef(){
+    return CAMPS[playerCampKey];
+}
+
+function updateWeaponStatusUI(){
+    const camp = getCampWeaponDef();
+    const myWeapons = weapons.filter(w=>w.camp===playerCampKey);
+    if(myWeapons.length===0){
+        weaponDom.textContent = "武器状态：无";
+    }else{
+        if(camp.weaponType==='mobile'){
+            const w = myWeapons[0];
+            const planet = planets.find(p=>p.uid===w.planetId);
+            weaponDom.textContent = `${camp.lwName}：已建造 (位于${planet?planet.planetName:'?'})`;
+        }else{
+            weaponDom.textContent = `${camp.lwName}：已部署${myWeapons.length}个`;
+        }
+    }
+    moveWeaponBtn.disabled = (camp.weaponType!=='mobile' || selectedWeapon===null);
+}
+
+function updateTips(){
+    const camp = getCampWeaponDef();
+    let tip = `【${camp.name}军备】\n`;
+    tip += `大型武器：${camp.lwName}（${camp.weaponType==='mobile'?'移动型·一次性建造':'部署型·可多次部署'}）\n`;
+    tip += `终结手段：${camp.finName}\n`;
+    if(camp.weaponType==='mobile'){
+        tip += `建造消耗${CONFIG.buildMoveCost}兵力，提供保卫+${camp.guardBonus}、削弱${camp.weaken}\n移动：选中武器(图标◈)再点己方星球`;
+    }else{
+        tip += `每次部署消耗${CONFIG.deployCost}兵力，可在任意星球部署\n己方星球：保卫+${camp.guardBonus}\n敌方/中立：每回合损兵${camp.decay}，战斗削弱${camp.weaken}`;
+    }
+    tipsPanel.textContent = tip;
+}
+
+function onBuildWeapon(){
+    const camp = getCampWeaponDef();
+    // 移动型：只能建造一次
+    if(camp.weaponType==='mobile'){
+        const existMobile = weapons.some(w=>w.camp===playerCampKey && w.type==='mobile');
+        if(existMobile){
+            alert(`${camp.lwName}已建造，不可重复建造！`);
+            return;
+        }
+        if(!selectedPlanet || selectedPlanet.camp !== playerCampKey){
+            alert("请先选中一个己方星球作为建造基地！");
+            return;
+        }
+        if(selectedPlanet.troop < CONFIG.buildMoveCost){
+            alert(`兵力不足，需要${CONFIG.buildMoveCost}兵力`);
+            return;
+        }
+        selectedPlanet.troop -= CONFIG.buildMoveCost;
+        // 创建移动型武器，放在该星球
+        weapons.push({
+            id: Math.random().toString(36).slice(2,8),
+            camp: playerCampKey,
+            type: 'mobile',
+            planetId: selectedPlanet.uid,
+            guardBonus: camp.guardBonus,
+            weaken: camp.weaken,
+            decay: 0
+        });
+        alert(`${camp.lwName}建造成功！`);
+    }else{
+        // 部署型：每次点击进入部署模式，要求先有己方星球付钱
+        if(!selectedPlanet || selectedPlanet.camp !== playerCampKey){
+            alert("请先选中一个己方星球支付部署费用！");
+            return;
+        }
+        if(selectedPlanet.troop < CONFIG.deployCost){
+            alert(`兵力不足，需要${CONFIG.deployCost}兵力`);
+            return;
+        }
+        // 进入部署模式，等待选择目标
+        deployMode = { fromPlanet: selectedPlanet };
+        selectedPlanet = null; // 清除选中的星球，避免干扰
+        selDom.textContent = "选择目标星球...";
+        selPlanetNameDom.textContent = "-";
+        render();
+        return; // 不立即创建，等待目标选择
+    }
+    updateWeaponStatusUI();
+    render();
+}
+
+// 部署模式下的目标选择由 canvasClick 处理
+
+function onMoveWeapon(){
+    if(!selectedWeapon || selectedWeapon.type!=='mobile') return;
+    if(!selectedPlanet || selectedPlanet.camp !== playerCampKey){
+        alert("请先选中一个己方星球作为移动目标！");
+        return;
+    }
+    // 移动武器
+    selectedWeapon.planetId = selectedPlanet.uid;
+    alert(`${CAMPS[playerCampKey].lwName}已移动到${selectedPlanet.planetName}`);
+    selectedWeapon = null;
+    selectedPlanet = null;
+    updateWeaponStatusUI();
+    moveWeaponBtn.disabled = true;
+    render();
+}
+
+// ==================== 鼠标交互 ====================
+function canvasClick(evt){
+    // 部署模式优先处理
+    if(deployMode){
+        const rect = canvas.getBoundingClientRect();
+        const mx = evt.clientX - rect.left;
+        const my = evt.clientY - rect.top;
+        const hit = planets.find(p=>Math.hypot(p.x-mx,p.y-my)<20);
+        if(!hit || hit.uid === deployMode.fromPlanet.uid){
+            alert("请选择目标星球（不能是自己）");
+            return;
+        }
+        // 扣除费用
+        const from = deployMode.fromPlanet;
+        from.troop -= CONFIG.deployCost;
+        // 创建部署型武器
+        const camp = getCampWeaponDef();
+        weapons.push({
+            id: Math.random().toString(36).slice(2,8),
+            camp: playerCampKey,
+            type: 'deploy',
+            planetId: hit.uid,
+            guardBonus: camp.guardBonus,
+            weaken: camp.weaken,
+            decay: camp.decay || 0
+        });
+        alert(`${camp.lwName}已部署到${hit.planetName}`);
+        deployMode = null;
+        updateWeaponStatusUI();
+        render();
+        return;
+    }
+
+    const rect = canvas.getBoundingClientRect();
+    const mx = evt.clientX - rect.left;
+    const my = evt.clientY - rect.top;
+    const hitPlanet = planets.find(p=>Math.hypot(p.x-mx,p.y-my)<20);
+    // 检查是否点击了武器图标（通过位置判断，简化为先检查星球再检查其武器）
+    let clickedWeapon = null;
+    if(hitPlanet){
+        const planetWeapons = weapons.filter(w=>w.planetId===hitPlanet.uid);
+        // 粗略判断：点击点在星球上方武器标记区域（y < hitPlanet.y - r - 2）
+        const r = hitPlanet.isHome?16:10;
+        if(my < hitPlanet.y - r && planetWeapons.length>0){
+            // 取最上面的武器（最后渲染的）
+            clickedWeapon = planetWeapons[planetWeapons.length-1];
+        }
+    }
+
+    // 处理武器点击
+    if(clickedWeapon && clickedWeapon.camp === playerCampKey){
+        // 选中武器
+        selectedWeapon = clickedWeapon;
+        selectedPlanet = null;
+        selDom.textContent = `武器：${CAMPS[playerCampKey].lwName}`;
+        selPlanetNameDom.textContent = hitPlanet.planetName;
+        moveWeaponBtn.disabled = (clickedWeapon.type!=='mobile');
+        render();
+        return;
+    }
+
+    // 普通星球交互
+    if(!hitPlanet){
+        selectedPlanet = null;
+        selectedWeapon = null;
+        selDom.textContent = "无";
+        selPlanetNameDom.textContent = "-";
+        moveWeaponBtn.disabled = true;
+        render(); return;
+    }
+
+    // 处理星球点击
+    if(selectedWeapon){
+        // 已有武器选中，尝试移动（仅移动型）
+        if(selectedWeapon.type==='mobile' && hitPlanet.camp===playerCampKey){
+            selectedWeapon.planetId = hitPlanet.uid;
+            alert(`武器已移动到${hitPlanet.planetName}`);
+            selectedWeapon = null;
+            selectedPlanet = null;
+            updateWeaponStatusUI();
+            moveWeaponBtn.disabled = true;
+            render();
+        }else{
+            alert("只能将移动型武器移动到己方星球！");
+            selectedWeapon = null;
+            moveWeaponBtn.disabled = true;
+        }
+        return;
+    }
+
+    if(selectedPlanet){
+        if(selectedPlanet.uid === hitPlanet.uid){
+            selectedPlanet = null;
+            selDom.textContent = "无";
+            selPlanetNameDom.textContent = "-";
+            render(); return;
+        }
+        const linkCheck = links.find(l=>
+            (l.a.uid===selectedPlanet.uid&&l.b.uid===hitPlanet.uid)||
+            (l.b.uid===selectedPlanet.uid&&l.a.uid===hitPlanet.uid)
+        );
+        if(!linkCheck){ alert("只能进攻或调兵到相邻星球！"); selectedPlanet=hitPlanet; }
+        else if(blockedLinks.has(linkCheck.idPair)){ alert("航道被封锁！"); selectedPlanet=hitPlanet; }
+        else if(selectedPlanet.camp===playerCampKey && hitPlanet.camp===playerCampKey){
+            moveTroops(selectedPlanet, hitPlanet);
+            selectedPlanet = null;
+        }
+        else if(selectedPlanet.camp===playerCampKey){
+            if(selectedPlanet.troop<=0){ alert("星球没有兵力！"); selectedPlanet=hitPlanet; }
+            else{ executeAttack(selectedPlanet,hitPlanet); selectedPlanet=null; }
+        }
+        else{ alert("请先选中己方星球！"); selectedPlanet=hitPlanet; }
+    }else{
+        selectedPlanet = hitPlanet;
+    }
+    selDom.textContent = hitPlanet.camp ? CAMPS[hitPlanet.camp].name:"中立星球";
+    selPlanetNameDom.textContent = hitPlanet.planetName;
+    moveWeaponBtn.disabled = true;
+    render();
+}
+
+function moveTroops(from, to){
+    const ratio = getSendRatio();
+    const sendTroop = Math.floor(from.troop * ratio);
+    if(sendTroop <= 0){ alert("兵力不足，无法调遣"); return; }
+    from.troop -= sendTroop;
+    to.troop += sendTroop;
+}
+
+// 战斗计算（应用武器效果）
+function executeAttack(from,to){
+    const ratio = getSendRatio();
+    let attackTroop = Math.floor(from.troop * ratio);
+    from.troop -= attackTroop;
+
+    // 获取目标星球上的武器效果
+    const targetWeapons = weapons.filter(w=>w.planetId===to.uid);
+    let guardBonus = 0;
+    let weakenEffect = 0;
+    targetWeapons.forEach(w=>{
+        // 部署型武器：若部署在敌方/中立星球，削弱进攻方；若己方星球则给防御加成
+        if(w.type==='deploy'){
+            if(to.camp === w.camp){
+                guardBonus += w.guardBonus; // 己方星球获得保卫值
+            }else{
+                weakenEffect += w.weaken;    // 敌方星球削弱进攻方
+            }
+        }else if(w.type==='mobile'){
+            // 移动型武器：其所在星球无论是谁，给防守方加保卫、削弱进攻方
+            // 这里假设移动型武器只属于玩家，固定在己方星球，但若被敌人占领？为简化，只当武器所有者与星球阵营一致时生效
+            if(to.camp === w.camp){
+                guardBonus += w.guardBonus;
+                weakenEffect += w.weaken;
+            }
+        }
+    });
+
+    // 进攻方可能因进攻起始星球上的武器而获得增益？设定里没提，忽略。
+    // 计算最终防守兵力
+    let defendTroop = to.troop + guardBonus;
+    let effectiveAttack = attackTroop - weakenEffect;
+    if(effectiveAttack < 0) effectiveAttack = 0;
+
+    const result = effectiveAttack - defendTroop;
+    if(result > 0){
+        statKills += to.troop;
+        to.camp = from.camp;
+        to.troop = result;
+        // 移除敌方武器（如果星球被占领，部署型武器应销毁）
+        weapons = weapons.filter(w=>!(w.planetId===to.uid && w.camp!==to.camp));
+        checkConquestWin();
+    }else{
+        statKills += Math.min(attackTroop, to.troop); // 粗略统计
+        to.troop -= attackTroop;
+        if(to.troop < 1) to.troop = 1;
+    }
+}
+
+function checkConquestWin(){
+    const enemyHomes = planets.filter(p=>p.isHome && p.camp && p.camp!==playerCampKey);
+    if(enemyHomes.length === 0){
+        endGame("conquest");
+    }
+}
+
+function nextTurn(){
+    // 武器衰减效果（部署型在非己方星球）
+    weapons.forEach(w=>{
+        if(w.type==='deploy' && w.decay>0){
+            const planet = planets.find(p=>p.uid===w.planetId);
+            if(planet && planet.camp !== w.camp){
+                planet.troop = Math.max(1, planet.troop - w.decay);
+            }
+        }
+    });
+
+    const diff = getDifficultyParams();
+    // AI 行动
+    planets.forEach(p=>{
+        if(p.camp && p.camp !== playerCampKey){
+            aiAction(p, diff.aiThreshold);
+        }
+    });
+    // 玩家增长
+    planets.forEach(p=>{
+        if(p.camp === playerCampKey) p.troop += 1;
+    });
+    // 困难模式敌方增长
+    if(diff.aiExtraGrowth){
+        planets.forEach(p=>{
+            if(p.camp && p.camp !== playerCampKey) p.troop += 1;
+        });
+    }
+    turn++;
+    turnDom.textContent = turn;
+    selectedPlanet = null;
+    selectedWeapon = null;
+    deployMode = null;
+    selDom.textContent = "无";
+    selPlanetNameDom.textContent = "-";
+    moveWeaponBtn.disabled = true;
+    updateWeaponStatusUI();
+    render();
+}
+
+function aiAction(ownPlanet, threshold){
+    if(ownPlanet.troop < threshold) return;
+    let targets = [];
+    links.forEach(ln=>{
+        if(ln.a.uid===ownPlanet.uid && ln.b.camp!==ownPlanet.camp && !blockedLinks.has(ln.idPair))
+            targets.push(ln.b);
+        else if(ln.b.uid===ownPlanet.uid && ln.a.camp!==ownPlanet.camp && !blockedLinks.has(ln.idPair))
+            targets.push(ln.a);
+    });
+    if(targets.length===0) return;
+    const target = targets[Math.floor(Math.random()*targets.length)];
+    const send = Math.floor(ownPlanet.troop * 0.7);
+    ownPlanet.troop -= send;
+
+    // AI 进攻也考虑武器效果（简化）
+    let attackTroop = send;
+    const targetWeapons = weapons.filter(w=>w.planetId===target.uid);
+    let guardBonus=0, weaken=0;
+    targetWeapons.forEach(w=>{
+        if(w.type==='deploy'){
+            if(target.camp === w.camp) guardBonus+=w.guardBonus;
+            else weaken+=w.weaken;
+        }else if(w.type==='mobile'){
+            if(target.camp===w.camp){ guardBonus+=w.guardBonus; weaken+=w.weaken; }
+        }
+    });
+    let effectiveAttack = attackTroop - weaken;
+    if(effectiveAttack<0) effectiveAttack=0;
+    const defendTroop = target.troop + guardBonus;
+    const res = effectiveAttack - defendTroop;
+    if(res > 0){
+        target.camp = ownPlanet.camp;
+        target.troop = res;
+        weapons = weapons.filter(w=>!(w.planetId===target.uid && w.camp!==target.camp));
+        checkConquestWin();
+    }else{
+        target.troop -= attackTroop;
+        if(target.troop<1) target.troop=1;
+    }
+}
+
+function getSendRatio(){ return parseFloat(sendRatioSelect.value||"0.5"); }
+
+function activateFinal(){
+    const camp = getCampWeaponDef();
+    // 终结手段要求已有大型武器
+    const hasWeapon = weapons.some(w=>w.camp===playerCampKey);
+    if(!hasWeapon){
+        alert(`必须先建造/部署${camp.lwName}！`);
+        return;
+    }
+    if(!selectedPlanet || selectedPlanet.camp !== playerCampKey){
+        alert("选中己方星球启动终结手段！");
+        return;
+    }
+    if(selectedPlanet.troop < CONFIG.finalCost){
+        alert(`需要${CONFIG.finalCost}兵力`);
+        return;
+    }
+    selectedPlanet.troop -= CONFIG.finalCost;
+    endGame("deterrence");
+}
+
+function endGame(victoryType){
+    const playerOwned = planets.filter(p=>p.camp===playerCampKey).length;
+    let scoreRaw = Math.round(playerOwned*9 + statKills*0.22 + turn*2);
+    document.getElementById("winTitle").innerText = victoryType==="conquest"?"征服胜利":"威慑胜利";
+    document.getElementById("resultType").innerText =
+        victoryType==="conquest"?"占领全部敌方母星，统一星图！":"启动终极武器强制停战";
+    document.getElementById("statPlanet").innerText = playerOwned;
+    document.getElementById("statKills").innerText = statKills;
+    document.getElementById("statTurn").innerText = turn;
+    document.getElementById("finalScore").innerText = scoreRaw;
+    resultModal.style.display = "flex";
+}
+function closeModal(){ resultModal.style.display = "none"; }
+</script>
+</body>
+</html>

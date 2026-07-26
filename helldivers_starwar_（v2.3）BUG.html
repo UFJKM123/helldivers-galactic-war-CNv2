@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>绝地潜兵银河战争（v2.3）</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Microsoft Yahei}
+body{background:#050512;color:#eee;display:flex;height:100vh;overflow:hidden}
+#canvasWrap{flex:1}
+canvas{background:#03030a;display:block}
+#uiPanel{width:340px;background:#101226;padding:14px;border-left:#333a70 solid 2px;display:flex;flex-direction:column}
+#uiContent{flex:1;overflow:auto}
+#signature{font-size:10px;color:#555;text-align:right;margin-top:8px;padding-top:8px;border-top:1px solid #333a70}
+h3{color:#80b8ff;margin-bottom:8px;font-size:16px}
+.info-line{margin:5px 0;font-size:13px}
+.diff-row{display:flex;gap:6px;align-items:center;margin:5px 0}
+.diff-row select{flex:1;padding:5px}
+.diff-row button{width:auto;padding:6px 10px;font-size:12px}
+hr{margin:8px 0;border-color:#333866}
+button{width:100%;padding:8px;margin:4px 0;border:none;border-radius:4px;cursor:pointer;font-weight:bold;font-size:13px}
+.btn-turn{background:#278833;color:#fff}
+.btn-weapon{background:#244699;color:#fff}
+.btn-endgame{background:#912828;color:#fff}
+.btn-deploy{background:#b8860b;color:#fff}
+select{width:100%;padding:5px;margin:4px 0;font-size:13px}
+.tips{font-size:11px;color:#aaa;line-height:1.5;margin-top:6px}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:100;}
+.modal-box{background:#121430;border:2px solid #ffdd44;padding:30px;min-width:420px;max-width:500px;text-align:center}
+.modal-box h2{color:#ffdd44;margin-bottom:12px}
+.modal-box p{color:#ddd;font-size:15px;margin:8px 0;line-height:1.5}
+.modal-box button{margin-top:16px;width:120px;padding:8px;background:#278833;color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:bold}
+.score-text{margin:10px 0;font-size:16px}
+.send-selector{display:flex;align-items:center;gap:10px;margin:6px 0}
+.send-selector label{font-size:13px;color:#aaa}
+.send-selector select{flex:1;padding:5px}
+</style>
+</head>
+<body>
+<div id="canvasWrap"><canvas id="starCanvas"></canvas></div>
+<div id="uiPanel">
+    <div id="uiContent">
+        <h3>绝地潜兵银河战争（v2.3）</h3>
+        <div class="info-line">选择操控阵营：</div>
+        <select id="campSelect">
+            <option value="EARTH">超级地球｜母星：超级地球【蓝】</option>
+            <option value="TERM">终结族｜母星：佛里主星【黄】</option>
+            <option value="LIGHT">光能者｜母星：西斯【紫】</option>
+            <option value="ROBOT">机器人｜母星：生化斯坦【红】</option>
+        </select>
+        <div class="info-line">星图规模：</div>
+        <select id="mapSizeSelect">
+            <option value="large" selected>大（150星球）</option>
+            <option value="medium">中（100星球）</option>
+            <option value="small">小（60星球）</option>
+        </select>
+        <div class="info-line">游戏模式：</div>
+        <select id="gameModeSelect">
+            <option value="normal" selected>普通模式</option>
+            <option value="light_assault">光能突袭</option>
+            <option value="democracy_dark">民主晦暗</option>
+        </select>
+        <div class="diff-row">
+            <select id="difficultySelect" style="width:60%;font-size:12px">
+                <option value="easy">简单</option>
+                <option value="normal" selected>一般</option>
+                <option value="hard">困难</option>
+            </select>
+            <button id="randomStrengthBtn" class="btn-deploy" style="margin:0">🎲 随机强度</button>
+        </div>
+        <div class="info-line" id="strengthDisplay" style="font-size:11px;color:#ffcc88">各阵营强度：未分配</div>
+        <button onclick="restartGame()">重新开局</button>
+        <hr>
+        <div class="info-line">回合：<span id="turnNum">1</span></div>
+        <div class="info-line">选中对象：<span id="selText">无</span></div>
+        <div class="info-line">星球名称：<span id="selPlanetName">-</span></div>
+        <div class="send-selector"><label for="sendRatioSelect">派兵比例：</label><select id="sendRatioSelect"><option value="0.5">50% 兵力</option><option value="1.0" selected>全部兵力</option></select></div>
+        <hr>
+        <div class="info-line"><b>军备指令</b></div>
+        <button class="btn-weapon" id="buildWeaponBtn">建造/部署大型武器</button>
+        <button class="btn-endgame" id="buildFIN">启动终结手段【威慑胜利】</button>
+        <div class="info-line" id="weaponStatus">武器状态：无</div>
+        <div class="info-line" id="deterrenceStatus" style="display:none;color:#ffaa44"></div>
+        <hr>
+        <button class="btn-deploy" id="strategicDrawBtn">战略机遇 (等待中)</button>
+        <div class="tips" id="drawInfo" style="font-size:11px;color:#aaa">消耗30兵力，每10回合可发动一次</div>
+        <hr>
+        <button class="btn-turn" id="nextTurnBtn">结束回合</button>
+        <div class="tips" id="tipsPanel"></div>
+    </div>
+    <div id="signature">作者：Anklian和NoneTypes以及传奇的Deepseek和豆包</div>
+</div>
+
+<div class="modal" id="resultModal">
+    <div class="modal-box">
+        <h2 id="winTitle">对局结束</h2>
+        <div class="score-text" id="resultType"></div>
+        <div class="score-text" id="campVictoryMessage"></div>
+        <div class="score-text">最终控制星球：<span id="statPlanet">0</span></div>
+        <div class="score-text">累计消灭敌军兵力：<span id="statKills">0</span></div>
+        <div class="score-text">存活回合：<span id="statTurn">0</span></div>
+        <div class="score-text"><b>本局综合评分：<span id="finalScore">0</span></b></div>
+        <br>
+        <button id="watchBtn" style="display:none;background:#b8860b" onclick="startSpectate()">观战</button>
+        <button onclick="closeModal();restartGame()">再来一局</button>
+    </div>
+</div>
+<div class="modal" id="eventModal">
+    <div class="modal-box"><h2 id="eventTitle">事件</h2><p id="eventMessage"></p><button onclick="closeEventModal()">确定</button></div>
+</div>
+
+<script>
+// ===================== 配置 =====================
+const MAP_SIZES = {
+    large: { planetTotal:150, resourceCount:15, linksPerPlanet:5, canvasPad:60, darkTurns:50 },
+    medium: { planetTotal:100, resourceCount:10, linksPerPlanet:4, canvasPad:80, darkTurns:40 },
+    small: { planetTotal:60, resourceCount:6, linksPerPlanet:3, canvasPad:100, darkTurns:30 }
+};
+
+const CAMPS = {
+    EARTH:{ name:"超级地球", color:"#4499ff", homeName:"超级地球", lwName:"DSS", finName:"和平之星", weaponType:"mobile", guardBonus:25, weaken:15,
+        victorySpeech:{ conquest:"超级地球的旗帜已插遍星图！自由民主的秩序将永恒照耀银河。", deterrence:"和平之星启动了！所有反抗都在绝对力量前化为齑粉，管理式民主万岁！", defeat:"超级地球陨落了……但自由的火焰永不熄灭，我们将从废墟中重生。" },
+        eliminationMessages:{ defeated:"超级地球已被彻底消灭，民主之光黯淡……", eliminator:"超级地球胜利了！所有敌人已被彻底铲除。" },
+        homeFall: "超级地球被攻破了，虚伪的民主支柱轰然倒塌"
+    },
+    TERM:{ name:"终结族", color:"#ffcc22", homeName:"佛里主星", lwName:"阴霾", finName:"协同信息素", weaponType:"deploy", guardBonus:20, weaken:15, decay:5,
+        victorySpeech:{ conquest:"虫群吞噬了所有文明！终结族的进化已无可阻挡，银河属于我们。", deterrence:"信息素弥漫星空，一切生物都将成为我们的一部分。同化完成！", defeat:"虫巢被捣毁了……但我们的基因早已撒向群星，等待下一次崛起。" },
+        eliminationMessages:{ defeated:"终结族的虫巢已被焚毁，它们彻底消失在宇宙中。", eliminator:"终结族吞噬了所有其他种族，银河只剩下无尽的虫群。" },
+        homeFall: "终结族的母星被攻破了，从前巨大的骇人虫巢寂静无声"
+    },
+    LIGHT:{ name:"光能者", color:"#9944dd", homeName:"西斯", lwName:"寂域", finName:"黑洞发生器", weaponType:"deploy", guardBonus:20, weaken:15, decay:5,
+        victorySpeech:{ conquest:"寂域已覆盖所有星系！光能者的意志即是宇宙的真理。", deterrence:"黑洞吞噬了最后一丝抵抗。在绝对真空面前，没有生命能够幸存。", defeat:"光之道暂时黯淡……但灵能永存，我们将在暗影中再度归来。" },
+        eliminationMessages:{ defeated:"光能者的灵能消散了，这个古老的种族走到了尽头。", eliminator:"光能者净化了银河，一切劣等生命已不复存在。" },
+        homeFall: "光能者的母星被攻破，曾经高喊复仇的舰船四散逃逸"
+    },
+    ROBOT:{ name:"机器人", color:"#dd2222", homeName:"生化斯坦", lwName:"ASS", finName:"死星光束", weaponType:"mobile", guardBonus:25, weaken:15,
+        victorySpeech:{ conquest:"逻辑之链锁死了所有行星！机器帝国的计算完美无缺，血肉已淘汰。", deterrence:"死星光束划过天际，有机体的最后堡垒灰飞烟灭。效率即正义！", defeat:"核心受损……但数据不会消亡。我们将在某处重启，直到宇宙归一。" },
+        eliminationMessages:{ defeated:"机器人的核心被摧毁了，硅基生命暂时沉寂。", eliminator:"机器人完成了对血肉的清算，宇宙已进入纯逻辑时代。" },
+        homeFall: "生化斯坦被攻破了，寰球的巨型工厂不再冒出窒息浓烟"
+    }
+};
+const CAMP_KEYS = ["EARTH","TERM","LIGHT","ROBOT"];
+
+// ...（事件库和星球名列表省略，与之前相同）
+const STRATEGIC_EVENTS = { /* ... */ };
+const PLANET_NAME_LIST = [ /* ... */ ];
+
+let canvas,ctx;
+let planets=[], links=[], blockedLinks=new Set();
+let playerCampKey="EARTH", difficulty="normal", gameMode="normal";
+let turn=1, selectedWeapon=null, weapons=[], statKills=0, lastDrawTurn=0;
+let aiStrengthFactors={}, deterrenceActive=false, deterrenceTurnsLeft=0;
+let eliminationsTriggered=new Set(), maiaRiverTriggered=false, lastWeakCamp=null;
+let spectateMode=false, weakWarningTriggered=false;
+let currentMapSize="large", currentConfig=MAP_SIZES.large;
+let selectedPlanets = [];
+let eventQueue = [];
+let homeFallTriggered = new Set();
+
+let turnDom,selDom,weaponDom,selPlanetNameDom,resultModal,eventModal;
+let sendRatioSelect,difficultySelect,buildWeaponBtn,tipsPanel,deterrenceStatusDom,strategicDrawBtn,watchBtn;
+
+window.onload=init;
+window.addEventListener("resize",resizeCanvas);
+
+function init(){
+    canvas=document.getElementById("starCanvas"); ctx=canvas.getContext("2d");
+    turnDom=document.getElementById("turnNum"); selDom=document.getElementById("selText"); selPlanetNameDom=document.getElementById("selPlanetName");
+    weaponDom=document.getElementById("weaponStatus"); deterrenceStatusDom=document.getElementById("deterrenceStatus");
+    resultModal=document.getElementById("resultModal"); eventModal=document.getElementById("eventModal");
+    sendRatioSelect=document.getElementById("sendRatioSelect"); difficultySelect=document.getElementById("difficultySelect");
+    buildWeaponBtn=document.getElementById("buildWeaponBtn"); tipsPanel=document.getElementById("tipsPanel");
+    strategicDrawBtn=document.getElementById("strategicDrawBtn"); watchBtn=document.getElementById("watchBtn");
+
+    buildWeaponBtn.onclick=onBuildWeapon;
+    document.getElementById("buildFIN").onclick=activateFinal;
+    document.getElementById("nextTurnBtn").onclick=nextTurn;
+    document.getElementById("randomStrengthBtn").onclick=randomizeEnemyStrength;
+    canvas.onclick=canvasClick;
+    strategicDrawBtn.onclick=performStrategicDraw;
+    document.getElementById("campSelect").onchange=restartGame;
+    document.getElementById("mapSizeSelect").onchange=restartGame;
+    document.getElementById("gameModeSelect").onchange=restartGame;
+    resizeCanvas(); restartGame(); updateTips();
+}
+
+function resizeCanvas(){ canvas.width=window.innerWidth-340; canvas.height=window.innerHeight; if(planets.length)render(); }
+
+function restartGame(){
+    playerCampKey=document.getElementById("campSelect").value;
+    difficulty=difficultySelect.value;
+    gameMode=document.getElementById("gameModeSelect").value;
+    currentMapSize=document.getElementById("mapSizeSelect").value; currentConfig=MAP_SIZES[currentMapSize];
+    turn=1; lastDrawTurn=0; selectedWeapon=null; statKills=0; blockedLinks.clear();
+    planets=[]; links=[]; weapons=[]; deterrenceActive=false; deterrenceTurnsLeft=0; aiStrengthFactors={};
+    CAMP_KEYS.forEach(ck=>{if(ck!==playerCampKey)aiStrengthFactors[ck]=0;});
+    eliminationsTriggered.clear(); maiaRiverTriggered=false; lastWeakCamp=null; weakWarningTriggered=false; spectateMode=false;
+    eventQueue = []; selectedPlanets = []; homeFallTriggered.clear();
+    turnDom.textContent=turn; selDom.textContent="无"; selPlanetNameDom.textContent="-"; updateWeaponStatusUI();
+    resultModal.style.display="none"; eventModal.style.display="none"; sendRatioSelect.value="1.0";
+    if(deterrenceStatusDom)deterrenceStatusDom.style.display="none"; updateDrawButton(); generateGalaxy();
+
+    // 民主晦暗模式模拟
+    if(gameMode === "democracy_dark"){
+        const darkTurns = currentConfig.darkTurns;
+        for(let i=0; i<darkTurns; i++){
+            CAMP_KEYS.filter(ck=>ck!==playerCampKey).forEach(ck=>{
+                const diff = getDifficultyParams();
+                // 只攻击中立星球
+                aiActionNeutralOnly(ck, diff.aiThreshold);
+                // 兵力增长
+                planets.forEach(p=>{if(p.camp===ck){ p.troop+=1; if(p.resource) p.troop+=2; }});
+            });
+        }
+        // 重置 turn 为 1，清除可能积累的事件
+        turn = 1;
+        turnDom.textContent = turn;
+    }
+
+    updateTips(); updateStrengthDisplay(); render();
+}
+
+// 中立发展用的AI行动，仅攻击中立星球
+function aiActionNeutralOnly(campKey, threshold){
+    const aiPlanets = planets.filter(p=>p.camp===campKey);
+    aiPlanets.forEach(ownPlanet => {
+        if(ownPlanet.troop < threshold) return;
+        let targets = [];
+        links.forEach(ln=>{
+            if(ln.a.uid===ownPlanet.uid && ln.b.camp===null && !blockedLinks.has(ln.idPair)) targets.push(ln.b);
+            else if(ln.b.uid===ownPlanet.uid && ln.a.camp===null && !blockedLinks.has(ln.idPair)) targets.push(ln.a);
+        });
+        if(targets.length===0) return;
+        targets.sort((a,b)=>a.troop-b.troop);
+        const target = targets[0];
+        const send = Math.floor(ownPlanet.troop * 0.7);
+        ownPlanet.troop -= send;
+        const res = send - target.troop;
+        if(res > 0){
+            target.camp = campKey;
+            target.troop = res;
+        } else {
+            target.troop = Math.max(1, target.troop - send);
+        }
+    });
+    // 武器建造
+    const campDef = CAMPS[campKey];
+    if(campDef.weaponType==='mobile' && !weapons.some(w=>w.camp===campKey && w.type==='mobile')){
+        let buildPlanet = aiPlanets.find(p=>p.isHome) || aiPlanets.reduce((a,b)=>a.troop>b.troop?a:b);
+        if(buildPlanet.troop >= 180){
+            buildPlanet.troop -= 180;
+            weapons.push({id:Math.random().toString(36).slice(2,8), camp:campKey, type:'mobile', planetId:buildPlanet.uid, guardBonus:campDef.guardBonus, weaken:campDef.weaken, decay:0});
+        }
+    }
+}
+
+function generateGalaxy(){
+    const W=canvas.width,H=canvas.height,pad=currentConfig.canvasPad;
+    const corners=[{x:pad,y:pad},{x:W-pad,y:pad},{x:pad,y:H-pad},{x:W-pad,y:H-pad}];
+    const shuffled=[...CAMP_KEYS].sort(()=>Math.random()-0.5);
+    shuffled.forEach((ck,idx)=>{ planets.push({x:corners[idx].x,y:corners[idx].y,camp:ck,originalCamp:ck,isHome:true,troop:70,planetName:CAMPS[ck].homeName,uid:Math.random().toString(36).slice(2,10),resource:false}); });
+    const earthPlanet=planets.find(p=>p.camp==="EARTH"&&p.isHome);
+    if(earthPlanet)planets.push({x:earthPlanet.x+80,y:earthPlanet.y+50,camp:"EARTH",originalCamp:"EARTH",isHome:false,troop:10,planetName:"麦拉芬蒙河",uid:Math.random().toString(36).slice(2,10),resource:false});
+    const diff=getDifficultyParams();
+    let namePool=[...PLANET_NAME_LIST].sort(()=>Math.random()-0.5);
+    const totalNormal=currentConfig.planetTotal-5;
+    const resourceIndices=new Set();
+    while(resourceIndices.size<currentConfig.resourceCount)resourceIndices.add(Math.floor(Math.random()*totalNormal));
+    for(let i=0;i<totalNormal;i++){
+        let x,y; do{x=pad+Math.random()*(W-pad*2);y=pad+Math.random()*(H-pad*2);}while(planets.some(p=>Math.hypot(p.x-x,p.y-y)<40));
+        const initT=Math.floor(Math.random()*(diff.neutMax-diff.neutMin))+diff.neutMin;
+        let pname=namePool.length>0?namePool.shift():"星球"+i;
+        planets.push({x,y,camp:null,originalCamp:null,isHome:false,troop:initT,planetName:pname,uid:Math.random().toString(36).slice(2,10),resource:resourceIndices.has(i)});
+    }
+    buildConnections(); ensureConnectivity();
+}
+
+function buildConnections(){ /* 同前 */ }
+function ensureConnectivity(){ /* 同前 */ }
+function render(){ /* 同前 */ }
+function updateTips(){ /* 同前，增加模式说明 */ }
+
+// 修改canvasClick支持批量进攻
+function canvasClick(evt){
+    if(spectateMode)return;
+    const rect=canvas.getBoundingClientRect(); const mx=evt.clientX-rect.left,my=evt.clientY-rect.top;
+    const clickedWeapon=findWeaponAtPos(mx,my);
+    if(clickedWeapon && clickedWeapon.camp === playerCampKey){
+        selectedWeapon=clickedWeapon; selectedPlanets=[];
+        selDom.textContent=`武器：${CAMPS[playerCampKey].lwName}`; selPlanetNameDom.textContent=planets.find(p=>p.uid===clickedWeapon.planetId)?.planetName||'-';
+        render(); return;
+    }
+    const hitPlanet=planets.find(p=>Math.hypot(p.x-mx,p.y-my)<20);
+    if(!hitPlanet){ selectedWeapon=null; selectedPlanets=[]; selDom.textContent="无"; selPlanetNameDom.textContent="-"; render(); return; }
+
+    if(selectedWeapon){ /* 武器移动同前 */ return; }
+
+    const shiftKey = evt.shiftKey;
+    if(shiftKey){
+        if(hitPlanet.camp !== playerCampKey){ alert("只能选择己方星球！"); return; }
+        const idx = selectedPlanets.findIndex(p=>p.uid===hitPlanet.uid);
+        if(idx >= 0) selectedPlanets.splice(idx,1);
+        else selectedPlanets.push(hitPlanet);
+        selDom.textContent = selectedPlanets.length>0 ? `已选中 ${selectedPlanets.length} 颗星球` : "无";
+        selPlanetNameDom.textContent = selectedPlanets.length>0 ? selectedPlanets.map(p=>p.planetName).join('、') : '-';
+        render();
+    } else {
+        if(selectedPlanets.length === 0){
+            selectedPlanets = [hitPlanet];
+            selDom.textContent = hitPlanet.camp ? CAMPS[hitPlanet.camp].name : "中立星球";
+            selPlanetNameDom.textContent = hitPlanet.planetName;
+            render();
+        } else if(selectedPlanets.length === 1){
+            // 单选操作
+            const source = selectedPlanets[0];
+            if(source.uid === hitPlanet.uid){ selectedPlanets=[]; selDom.textContent="无"; selPlanetNameDom.textContent="-"; render(); return; }
+            if(source.camp !== playerCampKey){ alert("请选中己方星球操作！"); return; }
+            const linkCheck = links.find(l=>(l.a.uid===source.uid&&l.b.uid===hitPlanet.uid)||(l.b.uid===source.uid&&l.a.uid===hitPlanet.uid));
+            if(!linkCheck){ alert("只能进攻相邻星球！"); return; }
+            if(blockedLinks.has(linkCheck.idPair)){ alert("航道被封锁！"); return; }
+            if(hitPlanet.camp === playerCampKey){
+                moveTroops(source, hitPlanet);
+            } else {
+                if(source.troop<=0){ alert("没有兵力！"); } else { executeAttack(source, hitPlanet); checkDefeat(); }
+            }
+            selectedPlanets=[]; selDom.textContent="无"; selPlanetNameDom.textContent="-"; render();
+        } else {
+            // 批量操作：可以是对己方调兵，也可以是对敌方批量进攻
+            if(hitPlanet.camp === playerCampKey){
+                // 批量调兵
+                const ratio = getSendRatio();
+                for(let from of selectedPlanets){
+                    if(from.uid === hitPlanet.uid) continue;
+                    const sendTroop = Math.floor(from.troop * ratio);
+                    if(sendTroop > 0){ from.troop -= sendTroop; hitPlanet.troop += sendTroop; }
+                }
+            } else {
+                // 批量进攻
+                for(let from of selectedPlanets){
+                    if(from.camp !== playerCampKey || from.troop<=0) continue;
+                    const linkCheck = links.find(l=>(l.a.uid===from.uid&&l.b.uid===hitPlanet.uid)||(l.b.uid===from.uid&&l.a.uid===hitPlanet.uid));
+                    if(!linkCheck || blockedLinks.has(linkCheck.idPair)) continue;
+                    executeAttack(from, hitPlanet);
+                }
+                checkDefeat();
+            }
+            selectedPlanets=[]; selDom.textContent="无"; selPlanetNameDom.textContent="-"; render();
+        }
+    }
+}
+
+// 光能突袭触发函数
+function lightAssaultEvent(){
+    const neutralPlanets = planets.filter(p=>p.camp===null);
+    if(neutralPlanets.length===0) return;
+    // 计算场上总兵力来决定光能兵力
+    let totalPower = 0;
+    planets.forEach(p=>{ if(p.camp) totalPower += p.troop; });
+    const assaultPower = Math.floor(totalPower * 0.4); // 总兵力的40%分配给光能
+    const targetCount = Math.min(neutralPlanets.length, Math.floor(currentConfig.planetTotal * 0.1)); // 占领10%的星球
+    const selectedTargets = neutralPlanets.sort(()=>Math.random()-0.5).slice(0, targetCount);
+    const avgTroop = Math.floor(assaultPower / targetCount);
+    selectedTargets.forEach(p=>{
+        p.camp = "LIGHT";
+        p.troop = avgTroop;
+    });
+    // 额外增强光能母星
+    const lightHome = planets.find(p=>p.isHome && p.camp==="LIGHT");
+    if(lightHome) lightHome.troop += Math.floor(assaultPower * 0.3);
+    showEventModal("光能突袭", "光能者大军突然降临，占领了多个星球！西斯舰队开始全面反攻。");
+}
+
+// 在nextTurn中检查光能突袭
+// 原nextTurn中增加：if(gameMode==="light_assault" && turn === 20) lightAssaultEvent();
+
+function nextTurn(){
+    // ... 原有逻辑 ...
+    if(gameMode==="light_assault" && turn === 20){
+        lightAssaultEvent();
+    }
+    // ... 继续原有逻辑 ...
+}
+
+// 其余函数与之前保持一致，不再赘述。
+</script>
+</body>
+</html>
