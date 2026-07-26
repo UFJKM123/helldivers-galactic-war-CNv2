@@ -441,21 +441,11 @@ window.GameEngine = (function() {
             const minY = Math.min(state.boxStartY, state.boxEndY);
             const maxY = Math.max(state.boxStartY, state.boxEndY);
             
-            const newSelection = state.planets.filter(p=>
+            state.selectedPlanets = state.planets.filter(p=>
                 p.camp === state.playerCampKey &&
                 p.x >= minX && p.x <= maxX &&
                 p.y >= minY && p.y <= maxY
             );
-
-            // 按住Shift追加选中，否则直接替换
-            if(e.shiftKey){
-                const uidSet = new Set(state.selectedPlanets.map(p=>p.uid));
-                newSelection.forEach(p=>uidSet.add(p.uid));
-                state.selectedPlanets = state.planets.filter(p=>uidSet.has(p.uid));
-            } else {
-                state.selectedPlanets = newSelection;
-            }
-
             state.hasDragged = false;
             render();
             return { type:"selection", planets: state.selectedPlanets };
@@ -469,6 +459,25 @@ window.GameEngine = (function() {
         const rect = state.canvas.getBoundingClientRect();
         const mx = evt.clientX - rect.left;
         const my = evt.clientY - rect.top;
+
+        // Shift+点击：多选切换
+        if(evt.shiftKey) {
+            const hitPlanet = state.planets.find(p=>Math.hypot(p.x-mx,p.y-my)<20);
+            if(hitPlanet && hitPlanet.camp === state.playerCampKey) {
+                const index = state.selectedPlanets.findIndex(p=>p.uid === hitPlanet.uid);
+                if(index >= 0) {
+                    state.selectedPlanets.splice(index, 1);
+                } else {
+                    state.selectedPlanets.push(hitPlanet);
+                }
+                // 清除武器选中，因为进入星球多选模式
+                state.selectedWeapon = null;
+                render();
+                return { type:"selection", planets: state.selectedPlanets };
+            }
+            // 没有点中己方星球则不操作
+            return;
+        }
 
         const clickedWeapon = findWeaponAtPos(mx, my);
         if(clickedWeapon && clickedWeapon.camp === state.playerCampKey){
@@ -486,20 +495,6 @@ window.GameEngine = (function() {
             return { type:"clear" };
         }
 
-        // Shift+点击己方星球：逐个加减选中
-        if(evt.shiftKey && hitPlanet.camp === state.playerCampKey){
-            const idx = state.selectedPlanets.findIndex(p=>p.uid === hitPlanet.uid);
-            if(idx > -1){
-                state.selectedPlanets.splice(idx, 1); // 已选中就取消
-            } else {
-                state.selectedPlanets.push(hitPlanet); // 没选中就加上
-            }
-            render();
-            return { type:"selection", planets: state.selectedPlanets };
-        }
-
-        if(state.selectedWeapon){
-
         if(state.selectedWeapon){
             return handleWeaponMove(hitPlanet);
         }
@@ -515,27 +510,25 @@ window.GameEngine = (function() {
         }
     }
 
-        function handleWeaponMove(targetPlanet) {
+    function handleWeaponMove(targetPlanet) {
+        // 只允许移动型武器移动
         if(state.selectedWeapon.type !== 'mobile'){
             state.selectedWeapon = null;
             render();
-            return { success:false };
+            return { success:false, msg:"阴霾和寂域不可移动" };
         }
-        // 本回合已移动则弹出提示
         if(state.weaponMovedThisTurn){
             state.selectedWeapon = null;
             render();
             return { success:false, msg:"本回合已移动过武器，每回合只能移动一次" };
         }
 
-        // 全图任意星球可移动，取消相邻限制
+        // 移动到任意星球，不再检查相邻
         state.selectedWeapon.planetId = targetPlanet.uid;
-
-        // 仅敌方/中立扣20兵，己方不扣，修复误扣bug
-        if(targetPlanet.camp !== state.playerCampKey){
+        // 修复bug：仅对非己方星球扣20兵力
+        if(targetPlanet.camp !== state.selectedWeapon.camp) {
             targetPlanet.troop = Math.max(1, targetPlanet.troop - 20);
         }
-
         state.weaponMovedThisTurn = true;
         state.selectedWeapon = null;
         state.selectedPlanets = [];
@@ -543,7 +536,7 @@ window.GameEngine = (function() {
         return { success:true };
     }
 
-        function handleSinglePlanetAction(target) {
+    function handleSinglePlanetAction(target) {
         const source = state.selectedPlanets[0];
         if(source.uid === target.uid){
             state.selectedPlanets = [];
@@ -553,20 +546,20 @@ window.GameEngine = (function() {
         if(source.camp !== state.playerCampKey){
             state.selectedPlanets = [];
             render();
-            return { success:false, msg:"请选中己方星球操作！" };
+            return { success:false };
         }
 
-        // 己方星球调兵：走补给线连通逻辑
+        // 进攻/调兵现在基于路径相连（同框选逻辑）
         if(target.camp === state.playerCampKey){
-            if(!arePlayerPlanetsConnected(source, target)){
-                return { success:false, msg:"没有连通的补给线，无法调兵" };
+            // 调兵到己方星球：需要路径直接相连
+            if(!arePlayerPlanetsConnected(source, target)) {
+                state.selectedPlanets = [];
+                render();
+                return { success:false };
             }
             moveTroops(source, target);
-        }
-        // 进攻敌方/中立：复用框选的连通进攻逻辑
-        else {
-            const ratio = getSendRatio();
-            // 找到目标相邻的所有己方前线星球
+        } else {
+            // 攻击敌方/中立：寻找与目标相邻的己方前线星球，且源星球能通过己方路径到达该前线
             const frontier = state.planets.filter(p =>
                 p.camp === state.playerCampKey &&
                 state.links.some(ln =>
@@ -574,41 +567,18 @@ window.GameEngine = (function() {
                     (ln.b.uid === p.uid && ln.a.uid === target.uid)
                 )
             );
-            // 源星球能连通到任意一颗前线星球才能进攻
-            const canReach = frontier.some(f => arePlayerPlanetsConnected(source, f));
-            if(!canReach){
-                return { success:false, msg:"没有连通的进攻路线" };
+            const connectedFrontier = frontier.filter(f => arePlayerPlanetsConnected(source, f));
+            if(connectedFrontier.length === 0) {
+                state.selectedPlanets = [];
+                render();
+                return { success:false };
             }
-            if(source.troop <= 0) return { success:false, msg:"没有兵力！" };
-
-            const sendTroop = Math.floor(source.troop * ratio);
-            source.troop -= sendTroop;
-
-            // 计算目标防御加成
-            const targetWeapons = state.weapons.filter(w=>w.planetId===target.uid);
-            let guardBonus = 0, weakenEffect = 0;
-            targetWeapons.forEach(w=>{
-                if(target.camp === w.camp){
-                    guardBonus += w.guardBonus;
-                    weakenEffect += w.weaken;
-                }
-            });
-
-            const effectiveAttack = Math.max(0, sendTroop - weakenEffect);
-            const defendTroop = target.troop + guardBonus;
-            const result = effectiveAttack - defendTroop;
-
-            if(result > 0){
-                state.statKills += target.troop;
-                const oldCamp = target.camp;
-                target.camp = state.playerCampKey;
-                target.troop = result;
-                onPlanetCaptured(target, oldCamp, state.playerCampKey);
-                checkConquestWin();
-            } else {
-                state.statKills += Math.min(sendTroop, target.troop);
-                target.troop = Math.max(1, target.troop - sendTroop);
+            if(source.troop <= 0) {
+                state.selectedPlanets = [];
+                render();
+                return { success:false };
             }
+            executeAttack(source, target);
             checkDefeat();
         }
 
@@ -705,7 +675,7 @@ window.GameEngine = (function() {
     function moveTroops(from, to) {
         const ratio = getSendRatio();
         const sendTroop = Math.floor(from.troop * ratio);
-        if(sendTroop <= 0) return { success:false, msg:"兵力不足" };
+        if(sendTroop <= 0) return { success:false };
         from.troop -= sendTroop;
         to.troop += sendTroop;
         return { success:true };
@@ -1250,11 +1220,11 @@ window.GameEngine = (function() {
         const camp = CAMPS[state.playerCampKey];
         let tip = `【${camp.name}军备】\n大型武器：${camp.lwName}（${camp.weaponType==='mobile'?'移动型·一次性建造':'部署型·可多次部署'}）\n终结手段：${camp.finName}（消耗400兵力）\n`;
         if(camp.weaponType==='mobile'){
-            tip += `建造消耗180兵力，保卫+20、削弱30\n点击武器图标再点任意相邻星球移动（敌方-20兵力）\n每回合限移动1次`;
+            tip += `建造消耗180兵力，保卫+20、削弱30\n点击武器图标再点任意星球移动（敌方-20兵力，己方无损）\n每回合限移动1次`;
         } else {
             tip += `每次部署消耗150兵力，可在己方星球部署（每星球上限4个）\n己方星球保卫+20，敌方进攻削弱15\n敌方控制时每回合损兵5（可叠加）`;
         }
-        tip += `\n◆ 资源星球：每回合额外+2兵力\n🎴 战略机遇：每10回合抽一次，消耗30兵力\n📦 拖拽框选己方星球，再点目标集体调兵/进攻（补给线连通即可）`;
+        tip += `\n◆ 资源星球：每回合额外+2兵力\n🎴 战略机遇：每10回合抽一次，消耗30兵力\n📦 拖拽框选或Shift+点击多选己方星球，再点目标集体调兵/进攻（补给线连通即可）`;
         return tip;
     }
 
