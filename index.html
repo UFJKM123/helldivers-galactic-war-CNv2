@@ -56,6 +56,7 @@ select{width:100%;padding:5px;margin:4px 0;font-size:13px}
         <div class="info-line" data-lang="menu.game_mode"></div>
         <select id="gameModeSelect">
             <option value="normal" selected data-lang="menu.game_mode_normal"></option>
+<<<<<<< Updated upstream
             <option value="light_assault">光能突袭</option>
             <option value="democracy_dark">民主晦暗</option>
         </select>
@@ -88,10 +89,45 @@ select{width:100%;padding:5px;margin:4px 0;font-size:13px}
         <div class="tips" id="tipsPanel"></div>
     </div>
     <div id="signature">作者：Anklian和NoneTypes以及传奇的Deepseek和豆包</div>
+=======
+            <option value="light_assault" data-lang="menu.game_mode_illuminate_assault"></option>
+            <option value="democracy_dark" data-lang="menu.game_mode_democracy_obscured"></option>
+        </select>
+        <div class="diff-row">
+            <select id="difficultySelect" style="width:60%;font-size:12px">
+                <option value="easy" data-lang="menu.difficulty_select_easy"></option>
+                <option value="normal" selected data-lang="menu.difficulty_select_normal"></option>
+                <option value="hard" data-lang="menu.difficulty_select_hard"></option>
+            </select>
+            <button id="randomStrengthBtn" class="btn-deploy" style="margin:0" data-lang="menu.random_intensity"></button>
+        </div>
+        <div class="info-line" id="strengthDisplay" style="font-size:11px;color:#ffcc88" data-lang="menu.faction_strengths"></div>
+        <button onclick="restartGame()" data-lang="menu.restart_campaign"></button>
+        <hr>
+        <div class="info-line" data-lang="menu.turn_number_display"><span id="turnNum">1</span></div>
+        <div class="info-line" data-lang="menu.selected_object_display"><span id="selText" data-lang="menu.selected_sbject_display_none"></span></div>
+        <div class="info-line" data-lang="menu.planet_name_display"><span id="selPlanetName">-</span></div>
+        <div class="send-selector"><label for="sendRatioSelect" data-lang="menu.deployment_ratio"></label><select id="sendRatioSelect"><option value="0.5" data-lang="menu.deployment_ratio_50%_troops"></option><option value="1.0" selected data-lang="menu.deployment_ratio_all_troops"></option></select></div>
+        <hr>
+        <div class="info-line"><b data-lang="menu.armament_directive"></b></div>
+        <button class="btn-weapon" id="buildWeaponBtn" data-lang="menu.construct_heavy_weapons"></button>
+        <button class="btn-endgame" id="buildFIN" data-lang="menu.initiate_final_measure"></button>
+        <div class="info-line" id="weaponStatus" data-lang="menu.weapon_status"></div>
+        <div class="info-line" id="deterrenceStatus" style="display:none;color:#ffaa44"></div>
+        <hr>
+        <button class="btn-deploy" id="strategicDrawBtn" data-lang="menu.strategic_opportunity"></button>
+        <div class="tips" id="drawInfo" style="font-size:11px;color:#aaa" data-lang="menu.strategic_opportunity_note"></div>
+        <hr>
+        <button class="btn-turn" id="nextTurnBtn" data-lang="menu.end_turn"></button>
+        <div class="tips" id="tipsPanel"></div>
+    </div>
+    <div id="signature" data-lang="info.developer"></div>
+>>>>>>> Stashed changes
 </div>
 
 <div class="modal" id="resultModal">
     <div class="modal-box">
+<<<<<<< Updated upstream
         <h2 id="winTitle">对局结束</h2>
         <div class="score-text" id="resultType"></div>
         <div class="score-text" id="campVictoryMessage"></div>
@@ -106,6 +142,22 @@ select{width:100%;padding:5px;margin:4px 0;font-size:13px}
 </div>
 <div class="modal" id="eventModal">
     <div class="modal-box"><h2 id="eventTitle">事件</h2><p id="eventMessage"></p><button onclick="closeEventModal()">确定</button></div>
+=======
+        <h2 id="winTitle" data-lang="menu.game_end_note"></h2>
+        <div class="score-text" id="resultType"></div>
+        <div class="score-text" id="campVictoryMessage"></div>
+        <div class="score-text" data-lang="menu.final_controlled_planets"><span id="statPlanet">0</span></div>
+        <div class="score-text" data-lang="menu.enemy_troops_eliminated"><span id="statKills">0</span></div>
+        <div class="score-text" data-lang="menu.survived_turns"><span id="statTurn">0</span></div>
+        <div class="score-text"><b data-lang="menu.overall_match_score"><span id="finalScore">0</span></b></div>
+        <br>
+        <button id="watchBtn" style="display:none;background:#b8860b" onclick="startSpectate()" data-lang="menu.spectate_note"></button>
+        <button onclick="closeModal();restartGame()" data-lang="menu.new_match_note"></button>
+    </div>
+</div>
+<div class="modal" id="eventModal">
+    <div class="modal-box"><h2 id="eventTitle" data-lang="menu.event_note"></h2><p id="eventMessage"></p><button onclick="closeEventModal()" data-lang="menu.confirm_note"></button></div>
+>>>>>>> Stashed changes
 </div>
 
 <script>
