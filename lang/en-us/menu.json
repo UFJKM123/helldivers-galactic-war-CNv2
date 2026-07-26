@@ -1,4 +1,5 @@
 {
+    "language": "Language",
     "choose_camp": "Choose Faction:",
     "camp_earth": "Super Earth | Home: Super Earth [Blue]",
     "camp_term": "Terminids | Home: Pholus Prime [Yellow]",
@@ -32,7 +33,6 @@
     "strategic_opportunity": "Strategic Opportunity (Pending)",
     "strategic_opportunity_note": "Costs 30 Troops",
     "end_turn": "End Turn",
-    "authors_note": "Authors: Anklian",
     "game_end_note": "Game End",
     "final_controlled_planets": "Final Controlled Planets:",
     "enemy_troops_eliminated": "Total Enemy Troops Eliminated:",

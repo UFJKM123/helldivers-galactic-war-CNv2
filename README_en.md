@@ -1,7 +1,7 @@
 # Helldivers Galactic War
 [简体中文](https://github.com/UFJKM123/helldivers-galactic-war-CNv2/blob/main/README.md) | [English](https://github.com/UFJKM123/helldivers-galactic-war-CNv2/blob/main/README_en.md)
 ## A non-profit fan-made indie game set in the Helldivers universe, developed in JavaScript, primarily built with AI.
-If you like this game, feel free to join the test group **220540284** to test and develop together.
+If you like this game, feel free to join our [Discord server](https://discord.gg/4rmPXcESXr) to post suggestions or develop together.
 
 This game is a fan-made work and has no affiliation, endorsement, or partnership with *Helldivers* or its copyright holders **Arrowhead Game Studios** and **Sony Interactive Entertainment**. All related characters, settings, names, and other intellectual property belong to their respective owners. This work is non-commercial and created for fan exchange and learning purposes only, with no profit motive.
 

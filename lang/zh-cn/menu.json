@@ -1,4 +1,5 @@
 {
+    "language": "Language",
     "choose_camp": "选择操控阵营：",
     "camp_earth": "超级地球｜母星：超级地球【蓝】",
     "camp_term": "终结族｜母星：佛里主星【黄】",
@@ -32,7 +33,6 @@
     "strategic_opportunity": "战略机遇 (等待中)",
     "strategic_opportunity_note": "消耗30兵力，每10回合可发动一次",
     "end_turn": "结束回合",
-    "authors_note": "作者：Anklian和NoneTypes以及传奇的Deepseek和豆包",
     "game_end_note": "对局结束",
     "final_controlled_planets": "最终控制星球：",
     "enemy_troops_eliminated": "累计消灭敌军兵力：",

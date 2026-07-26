@@ -1,97 +1,201 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-<meta charset="UTF-8">
-<title data-lang="info.title"></title>
-<link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-<div id="canvasWrap"><canvas id="starCanvas"></canvas></div>
-<div id="uiPanel">
-    <div id="uiContent">
+  <head>
+    <meta charset="UTF-8" />
+    <title data-lang="info.title"></title>
+
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div id="canvasWrap"><canvas id="starCanvas"></canvas></div>
+    <div id="uiPanel">
+      <div id="uiContent">
         <h3 data-lang="info.title"></h3>
+        <div class="xdisplay">
+          <div class="info-line" data-lang="menu.language"></div>
+
+          <select id="language">
+            <option value="zh-cn">简体中文</option>
+            <option value="en-us">English</option>
+            <option value="ja-jp">日本語</option>
+          </select>
+        </div>
         <div class="info-line" data-lang="menu.choose_camp"></div>
         <select id="campSelect">
-            <option value="EARTH" data-lang="menu.camp_earth"></option>
-            <option value="TERM" data-lang="menu.camp_term"></option>
-            <option value="LIGHT" data-lang="menu.camp_light"></option>
-            <option value="ROBOT" data-lang="menu.camp_robot"></option>
+          <option value="EARTH" data-lang="menu.camp_earth"></option>
+          <option value="TERM" data-lang="menu.camp_term"></option>
+          <option value="LIGHT" data-lang="menu.camp_light"></option>
+          <option value="ROBOT" data-lang="menu.camp_robot"></option>
         </select>
+        <div class="xdisplay">
         <div class="info-line" data-lang="menu.map_size"></div>
         <select id="mapSizeSelect">
-            <option value="large" selected data-lang="menu.size_large"></option>
-            <option value="medium" data-lang="menu.size_medium"></option>
-            <option value="small" data-lang="menu.size_small"></option>
+          <option value="large" selected data-lang="menu.size_large"></option>
+          <option value="medium" data-lang="menu.size_medium"></option>
+          <option value="small" data-lang="menu.size_small"></option>
         </select>
+        </div>
         <div class="info-line" data-lang="menu.game_mode"></div>
         <select id="gameModeSelect">
-            <option value="normal" selected data-lang="menu.game_mode_normal"></option>
-            <option value="light_assault" data-lang="menu.game_mode_illuminate_assault"></option>
-            <option value="democracy_dark" data-lang="menu.game_mode_democracy_obscured"></option>
+          <option
+            value="normal"
+            selected
+            data-lang="menu.game_mode_normal"
+          ></option>
+          <option
+            value="light_assault"
+            data-lang="menu.game_mode_illuminate_assault"
+          ></option>
+          <option
+            value="democracy_dark"
+            data-lang="menu.game_mode_democracy_obscured"
+          ></option>
         </select>
         <div class="diff-row">
-            <select id="difficultySelect" style="width:60%;font-size:12px">
-                <option value="easy" data-lang="menu.difficulty_select_easy"></option>
-                <option value="normal" selected data-lang="menu.difficulty_select_normal"></option>
-                <option value="hard" data-lang="menu.difficulty_select_hard"></option>
-            </select>
-            <button id="randomStrengthBtn" class="btn-deploy" style="margin:0" data-lang="menu.random_intensity"></button>
+          <select id="difficultySelect" style="width: 60%; font-size: 12px">
+            <option
+              value="easy"
+              data-lang="menu.difficulty_select_easy"
+            ></option>
+            <option
+              value="normal"
+              selected
+              data-lang="menu.difficulty_select_normal"
+            ></option>
+            <option
+              value="hard"
+              data-lang="menu.difficulty_select_hard"
+            ></option>
+          </select>
+          <button
+            id="randomStrengthBtn"
+            class="btn-deploy"
+            style="margin: 0"
+            data-lang="menu.random_intensity"
+          ></button>
         </div>
-        <div class="info-line" id="strengthDisplay" style="font-size:11px;color:#ffcc88" data-lang="menu.faction_strengths"></div>
+        <div
+          class="info-line"
+          id="strengthDisplay"
+          style="font-size: 11px; color: #ffcc88"
+          data-lang="menu.faction_strengths"
+        ></div>
         <button id="restartBtn" data-lang="menu.restart_campaign"></button>
-        <hr>
-        <div class="info-line" data-lang="menu.turn_number_display"><span id="turnNum">1</span></div>
-        <div class="info-line" data-lang="menu.selected_object_display"><span id="selText" data-lang="menu.selected_sbject_display_none"></span></div>
-        <div class="info-line" data-lang="menu.planet_name_display"><span id="selPlanetName">-</span></div>
-        <div class="send-selector">
-            <label for="sendRatioSelect" data-lang="menu.deployment_ratio"></label>
-            <select id="sendRatioSelect">
-                <option value="0.5" data-lang="menu.deployment_ratio_50%_troops"></option>
-                <option value="1.0" selected data-lang="menu.deployment_ratio_all_troops"></option>
-            </select>
+        <hr />
+        <div class="info-line" data-lang="menu.turn_number_display">
+          <span id="turnNum">1</span>
         </div>
-        <hr>
+        <div class="info-line" data-lang="menu.selected_object_display">
+          <span
+            id="selText"
+            data-lang="menu.selected_sbject_display_none"
+          ></span>
+        </div>
+        <div class="info-line" data-lang="menu.planet_name_display">
+          <span id="selPlanetName">-</span>
+        </div>
+        <div class="send-selector">
+          <label
+            for="sendRatioSelect"
+            data-lang="menu.deployment_ratio"
+          ></label>
+          <select id="sendRatioSelect">
+            <option
+              value="0.5"
+              data-lang="menu.deployment_ratio_50%_troops"
+            ></option>
+            <option
+              value="1.0"
+              selected
+              data-lang="menu.deployment_ratio_all_troops"
+            ></option>
+          </select>
+        </div>
+        <hr />
         <div class="info-line"><b data-lang="menu.armament_directive"></b></div>
-        <button class="btn-weapon" id="buildWeaponBtn" data-lang="menu.construct_heavy_weapons"></button>
-        <button class="btn-endgame" id="buildFIN" data-lang="menu.initiate_final_measure"></button>
-        <div class="info-line" id="weaponStatus" data-lang="menu.weapon_status"></div>
-        <div class="info-line" id="deterrenceStatus" style="display:none;color:#ffaa44"></div>
-        <hr>
-        <button class="btn-deploy" id="strategicDrawBtn" data-lang="menu.strategic_opportunity"></button>
-        <div class="tips" id="drawInfo" style="font-size:11px;color:#aaa" data-lang="menu.strategic_opportunity_note"></div>
-        <hr>
-        <button class="btn-turn" id="nextTurnBtn" data-lang="menu.end_turn"></button>
+        <button
+          class="btn-weapon"
+          id="buildWeaponBtn"
+          data-lang="menu.construct_heavy_weapons"
+        ></button>
+        <button
+          class="btn-endgame"
+          id="buildFIN"
+          data-lang="menu.initiate_final_measure"
+        ></button>
+        <div
+          class="info-line"
+          id="weaponStatus"
+          data-lang="menu.weapon_status"
+        ></div>
+        <div
+          class="info-line"
+          id="deterrenceStatus"
+          style="display: none; color: #ffaa44"
+        ></div>
+        <hr />
+        <button
+          class="btn-deploy"
+          id="strategicDrawBtn"
+          data-lang="menu.strategic_opportunity"
+        ></button>
+        <div
+          class="tips"
+          id="drawInfo"
+          style="font-size: 11px; color: #aaa"
+          data-lang="menu.strategic_opportunity_note"
+        ></div>
+        <hr />
+        <button
+          class="btn-turn"
+          id="nextTurnBtn"
+          data-lang="menu.end_turn"
+        ></button>
         <div class="tips" id="tipsPanel"></div>
+      </div>
+      <div id="signature" data-lang="info.developer"></div>
     </div>
-    <div id="signature" data-lang="info.developer"></div>
-</div>
 
-<div class="modal" id="resultModal">
-    <div class="modal-box">
+    <div class="modal" id="resultModal">
+      <div class="modal-box">
         <h2 id="winTitle" data-lang="menu.game_end_note"></h2>
         <div class="score-text" id="resultType"></div>
         <div class="score-text" id="campVictoryMessage"></div>
-        <div class="score-text" data-lang="menu.final_controlled_planets"><span id="statPlanet">0</span></div>
-        <div class="score-text" data-lang="menu.enemy_troops_eliminated"><span id="statKills">0</span></div>
-        <div class="score-text" data-lang="menu.survived_turns"><span id="statTurn">0</span></div>
-        <div class="score-text"><b data-lang="menu.overall_match_score"><span id="finalScore">0</span></b></div>
-        <br>
-        <button id="watchBtn" style="display:none;background:#b8860b" data-lang="menu.spectate_note"></button>
+        <div class="score-text" data-lang="menu.final_controlled_planets">
+          <span id="statPlanet">0</span>
+        </div>
+        <div class="score-text" data-lang="menu.enemy_troops_eliminated">
+          <span id="statKills">0</span>
+        </div>
+        <div class="score-text" data-lang="menu.survived_turns">
+          <span id="statTurn">0</span>
+        </div>
+        <div class="score-text">
+          <b data-lang="menu.overall_match_score"
+            ><span id="finalScore">0</span></b
+          >
+        </div>
+        <br />
+        <button
+          id="watchBtn"
+          style="display: none; background: #b8860b"
+          data-lang="menu.spectate_note"
+        ></button>
         <button id="newGameBtn" data-lang="menu.new_match_note"></button>
+      </div>
     </div>
-</div>
-<div class="modal" id="eventModal">
-    <div class="modal-box">
+    <div class="modal" id="eventModal">
+      <div class="modal-box">
         <h2 id="eventTitle" data-lang="menu.event_note"></h2>
         <p id="eventMessage"></p>
         <button id="eventConfirmBtn" data-lang="menu.confirm_note"></button>
+      </div>
     </div>
-</div>
 
-<script src="js/config.js"></script>
-<script src="js/i18n.js"></script>
-<script src="js/gameEngine.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/main.js"></script>
-</body>
+    <script src="js/config.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/gameEngine.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+  </body>
 </html>
