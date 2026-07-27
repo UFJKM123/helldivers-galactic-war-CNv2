@@ -17,7 +17,7 @@ const campOptions = [
     <div class="ui-content">
       <h1>{{ t?.("info.title") ?? "绝地潜兵银河战争" }}</h1>
       <div class="xdisplay">
-        <label class="info-line" for="language-select">{{ props.game.language.value === "en-us" ? "Language" : "语言" }}</label>
+        <label class="info-line" for="language-select">{{ props.game.language.value === "en-us" ? "Language" : "Language" }}</label>
         <select id="language-select" :value="props.game.language.value" @change="props.game.handleLanguageChange(($event.target as HTMLSelectElement).value)">
           <option value="zh-cn">简体中文</option>
           <option value="en-us">English</option>
