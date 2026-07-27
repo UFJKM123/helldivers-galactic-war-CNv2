@@ -110,7 +110,17 @@ select {
   margin: 5px 0;
 }
 
-.diff-row select,
+.diff-row select {
+  flex: 1 1 auto;
+  width: auto;
+}
+
+.diff-row button {
+  width: auto;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 .send-selector select {
   flex: 1;
 }
