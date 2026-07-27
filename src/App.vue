@@ -4,6 +4,7 @@ import GalaxyCanvas from "./components/GalaxyCanvas.vue";
 import GameControlPanel from "./components/GameControlPanel.vue";
 import EventModal from "./components/EventModal.vue";
 import ResultModal from "./components/ResultModal.vue";
+import ActionToast from "./components/ActionToast.vue";
 
 const game = useGame();
 </script>
@@ -12,6 +13,7 @@ const game = useGame();
   <main class="game-shell">
     <GalaxyCanvas :game="game" />
     <GameControlPanel :game="game" />
+    <ActionToast :message="game.errorMessage.value" @close="game.clearError" />
     <EventModal
       v-if="game.currentEvent.value"
       :event="game.currentEvent.value"

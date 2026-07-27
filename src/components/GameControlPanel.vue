@@ -79,7 +79,6 @@ const campOptions = [
       <hr />
       <button class="btn-turn" @click="props.game.nextTurn">{{ t?.("menu.end_turn") ?? "结束回合" }}</button>
       <div class="tips">{{ props.game.getTips() }}</div>
-      <div v-if="props.game.errorMessage.value" class="error-message" @click="props.game.clearError">{{ props.game.errorMessage.value }}</div>
     </div>
     <div class="signature">{{ t?.("info.developer") ?? "作者" }}</div>
   </aside>

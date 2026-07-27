@@ -1,4 +1,4 @@
-import { computed, onMounted, onUnmounted, reactive, ref, shallowRef } from "vue";
+import { computed, reactive, ref, shallowRef } from "vue";
 import { createGameEngine, type GameEngine } from "../game/GameEngine";
 import type {
   CampKey,
@@ -29,6 +29,7 @@ export function useGame() {
   const options = reactive<Required<RestartOptions>>({ ...DEFAULT_OPTIONS });
   const sendRatio = ref("1.0");
   const { language, setLanguage, t } = useI18n();
+  let errorTimer: ReturnType<typeof setTimeout> | undefined;
 
   const currentEvent = computed(() => eventQueue.value[0] ?? null);
   const selectedCount = computed(() => state.value?.selectedPlanets.length ?? 0);
@@ -59,8 +60,19 @@ export function useGame() {
 
   function runAction(action: () => { success?: boolean; msg?: string }): void {
     const actionResult = action();
-    if (!actionResult.success && actionResult.msg) errorMessage.value = actionResult.msg;
+    if (!actionResult.success && actionResult.msg) {
+      showError(actionResult.msg);
+    }
     state.value = engine.value?.getPublicState() ?? state.value;
+  }
+
+  function showError(message: string): void {
+    errorMessage.value = message;
+    if (errorTimer) clearTimeout(errorTimer);
+    errorTimer = setTimeout(() => {
+      errorMessage.value = "";
+      errorTimer = undefined;
+    }, 3600);
   }
 
   function restart(nextOptions: Partial<Required<RestartOptions>> = {}): void {
@@ -138,7 +150,7 @@ export function useGame() {
 
   function handleMouseUp(event: MouseEvent): void {
     const actionResult = engine.value?.handleMouseUp(event);
-    if (actionResult?.msg) errorMessage.value = actionResult.msg;
+    if (actionResult?.msg) showError(actionResult.msg);
     state.value = engine.value?.getPublicState() ?? state.value;
   }
 
@@ -165,9 +177,6 @@ export function useGame() {
   function handleLanguageChange(nextLanguage: string): void {
     setLanguage(nextLanguage);
   }
-
-  onMounted(() => window.addEventListener("resize", resize));
-  onUnmounted(() => window.removeEventListener("resize", resize));
 
   return {
     canvas,
@@ -202,6 +211,7 @@ export function useGame() {
     getWeaponStatus,
     getDrawButtonState,
     handleLanguageChange,
+    resize,
     t,
   };
 }

@@ -183,6 +183,68 @@ hr {
   cursor: pointer;
 }
 
+.toast {
+  position: fixed;
+  top: 12vh;
+  left: 50%;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(460px, calc(100vw - 32px));
+  padding: 13px 14px;
+  border: 1px solid #e06a6a;
+  border-radius: 8px;
+  background: rgb(39 17 28 / 96%);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 35%), 0 0 0 1px rgb(255 120 120 / 10%);
+  color: #ffe8e8;
+  transform: translateX(-50%);
+}
+
+.toast-mark {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  place-items: center;
+  border: 1px solid #ff9898;
+  border-radius: 50%;
+  color: #ffb0b0;
+  font-weight: 800;
+}
+
+.toast-message {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.toast-close {
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: #ffc5c5;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.toast-close:hover {
+  background: rgb(255 255 255 / 10%);
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -10px);
+}
+
 .modal {
   position: fixed;
   inset: 0;
