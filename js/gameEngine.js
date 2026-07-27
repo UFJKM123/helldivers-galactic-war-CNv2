@@ -750,7 +750,8 @@ window.GameEngine = (function() {
     }
 
     function checkConquestWin() {
-        if(state.planets.filter(p=>p.isHome && p.camp && p.camp!==state.playerCampKey).length === 0){
+        const hasEnemyPlanet = state.planets.some(p=> p.camp && p.camp !== state.playerCampKey);
+        if(!hasEnemyPlanet){
             endGame("conquest");
         }
     }
@@ -1161,7 +1162,7 @@ window.GameEngine = (function() {
         let title = "", resultText = "", campMessage = "";
         if(victoryType === "conquest"){
             title = "征服胜利";
-            resultText = "占领全部敌方母星，一统银河！";
+            resultText = "占领全部敌方星球，一统银河！";
             campMessage = camp.victorySpeech.conquest;
         } else if(victoryType === "deterrence"){
             title = "威慑胜利";
