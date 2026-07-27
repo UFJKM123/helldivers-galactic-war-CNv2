@@ -80,6 +80,9 @@ const campOptions = [
       <button class="btn-turn" @click="props.game.nextTurn">{{ t?.("menu.end_turn") ?? "结束回合" }}</button>
       <div class="tips">{{ props.game.getTips() }}</div>
     </div>
-    <div class="signature">{{ t?.("info.developer") ?? "作者" }}</div>
+    <div class="signature">
+      <div>{{ t?.("info.developer") ?? "作者" }}</div>
+      <div>{{ t?.("info.version") ?? "版本" }}</div>
+    </div>
   </aside>
 </template>
