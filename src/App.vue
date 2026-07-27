@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { SpeedInsights } from '@vercel/speed-insights/vue';
+import { Analytics } from '@vercel/analytics/vue';
 import { useGame } from "./composables/useGame";
 import GalaxyCanvas from "./components/GalaxyCanvas.vue";
 import GameControlPanel from "./components/GameControlPanel.vue";
@@ -10,6 +12,8 @@ const game = useGame();
 </script>
 
 <template>
+  <SpeedInsights />
+  <Analytics />
   <main class="game-shell">
     <GalaxyCanvas :game="game" />
     <GameControlPanel :game="game" />
