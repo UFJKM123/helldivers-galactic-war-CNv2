@@ -8,7 +8,7 @@ camp_robot,机器人｜母星：生化斯坦【红】,Automatons | Home: Cyberst
 map_size,星图规模：,Map Size:
 size_large,大（150星球）,Large (150 Planets)
 size_medium,中（100星球）,Medium (100 Planets)
-size_small,小（60星球）,Small (50 Planets)
+size_small,小（60星球）,Small (60 Planets)
 game_mode,游戏模式：,gamemode
 game_mode_normal,普通模式,normal
 game_mode_illuminate_assault,光能突袭,Illuminate Assault
@@ -29,9 +29,8 @@ deployment_ratio_all_troops,全部兵力,All Troops
 armament_directive,军备指令,Armament Directive
 construct_heavy_weapons,建造大型武器,Construct Heavy Weapons
 initiate_final_measure,启动终结手段【威慑胜利】,Final Measure [Deterrence Victory]
-weapon_status,武器状态：无,Weapon Status: None
 strategic_opportunity,战略机遇 (等待中),Strategic Opportunity (Pending)
-strategic_opportunity_note,消耗30兵力，每10回合可发动一次,Costs 30 Troops, Usable Every 10 Turns
+strategic_opportunity_note,消耗30兵力，每10回合可发动一次,"Costs 30 Troops, Usable Every 10 Turns"
 end_turn,结束回合,End Turn
 game_end_note,对局结束,Game End
 final_controlled_planets,最终控制星球：,Final Controlled Planets:

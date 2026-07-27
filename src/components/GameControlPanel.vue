@@ -82,7 +82,10 @@ const campOptions = [
     </div>
     <div class="signature">
       <div>{{ t?.("info.developer") ?? "作者" }}</div>
-      <div>{{ t?.("info.version") ?? "版本" }}</div>
+      <div class="xdisplay">
+        <a href="https://github.com/UFJKM123/helldivers-galactic-war-CNv2">Github</a>
+        <div>{{ t?.("info.version") ?? "版本" }}</div>
+      </div>
     </div>
   </aside>
 </template>

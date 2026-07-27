@@ -51,11 +51,11 @@ function t(path: string): string {
 
 function setLanguage(nextLanguage: string): void {
   const nextLocale: Locale = nextLanguage === "en-us" ? "en-us" : "zh-cn";
-  language.value = nextLocale;
+  if (nextLocale === language.value) return;
+
   const url = new URL(window.location.href);
   url.searchParams.set("lang", nextLocale);
-  window.history.replaceState(null, "", url);
-  void loadLocale(nextLocale);
+  window.location.assign(url.toString());
 }
 
 export function useI18n() {
@@ -70,4 +70,4 @@ export function useI18n() {
   };
 }
 
-void loadLocale(language.value);
+export const localeReady = loadLocale(language.value);

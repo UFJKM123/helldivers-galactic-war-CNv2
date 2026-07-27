@@ -32,6 +32,12 @@ Editable localization sources are under `lang_csv/`. Regenerate the runtime JSON
 
 ## 📋 Update Log
 
+### V5.1.0
+- Fixes:
+- 1.fixed language assistance
+- now all the text can change language synchronously and easy to add new language or fix translate mistakes
+- 2.added link of github page
+
 ### V5.0.0
 - Refactor:
   Rebuilt the project with Vite.
