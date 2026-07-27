@@ -4,10 +4,10 @@ import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-CSV_DIR = ROOT / "lang" / "lang_csv"
+CSV_DIR = ROOT / "lang_csv"
 OUTPUT_DIR = ROOT / "public" / "lang"
 
-if not (ROOT / "lang").exists():
+if not (ROOT / "lang_csv").exists():
     raise SystemExit("请在项目根目录中运行此工具")
 
 for csv_path in sorted(CSV_DIR.glob("*.csv")):
