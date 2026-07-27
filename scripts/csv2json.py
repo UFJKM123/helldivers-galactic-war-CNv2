@@ -25,7 +25,11 @@ for csv_path in sorted(CSV_DIR.glob("*.csv")):
         continue
 
     for index, locale in enumerate(rows[0][1:], start=1):
-        translations = {row[0]: row[index] for row in rows[1:] if len(row) > index}
+        translations = {
+            row[0]: row[index].replace("\\n", "\n")
+            for row in rows[1:]
+            if len(row) > index
+        }
         output_path = OUTPUT_DIR / locale / f"{csv_path.stem}.json"
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with output_path.open(mode="w", encoding="utf-8") as json_file:

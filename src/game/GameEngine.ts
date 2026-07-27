@@ -1,6 +1,7 @@
 // The original simulation is intentionally kept behavior-equivalent during the migration.
 import { CAMPS, CAMP_KEYS, MAP_SIZES, PLANET_NAME_LIST, STRATEGIC_EVENTS } from "./config";
 import { renderGalaxy } from "./CanvasRenderer";
+import { useI18n } from "../i18n";
 import { arePlanetsConnected } from "./rules/connectivity";
 import { calculateScore, resolveCombat } from "./rules/combat";
 import { getPowerByCamp } from "./rules/power";
@@ -85,6 +86,15 @@ interface InternalState {
 }
 
 export function createGameEngine(random: RandomSource = Math.random): GameEngine {
+    const { t } = useI18n();
+    const translate = (key: string, values: Record<string, string | number> = {}): string => {
+        let text = t(`warning.game_${key}`);
+        Object.entries(values).forEach(([name, value]) => {
+            text = text.replaceAll(`{${name}}`, String(value));
+        });
+        return text;
+    };
+
     const state: InternalState = {
         canvas: null,
         ctx: null,
@@ -232,7 +242,7 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
             if(oy < pad) oy = earthPlanet.y + 40;
             state.planets.push({
                 x:ox, y:oy, camp:"EARTH", originalCamp:"EARTH",
-                isHome:false, troop:10, planetName:"麦拉芬蒙河",
+                isHome:false, troop:10, planetName:translate("maia_river_name"),
                 uid:random().toString(36).slice(2,10), resource:false
             });
         }
@@ -254,7 +264,7 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
             } while(state.planets.some(p=>Math.hypot(p.x-x,p.y-y)<40));
             
             const initT = Math.floor(random()*(diff.neutMax-diff.neutMin)) + diff.neutMin;
-            const pname = namePool.shift() ?? `星球${i}`;
+            const pname = namePool.shift() ?? translate("planet_name_fallback", { index: i });
             state.planets.push({
                 x, y, camp:null, originalCamp:null,
                 isHome:false, troop:initT, planetName:pname,
@@ -326,20 +336,20 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
     }
 
     function buildWeapon() {
-        if(state.spectateMode) return { success:false, msg:"观战模式无法操作" };
+        if(state.spectateMode) return { success:false, msg:translate("spectate_unavailable") };
 
         const camp = getCampWeaponDef(state.playerCampKey);
         const planet = state.selectedPlanets.length===1 ? state.selectedPlanets[0] : null;
 
         if(!planet || planet.camp !== state.playerCampKey){
-            return { success:false, msg:"请选中己方星球" };
+            return { success:false, msg:translate("select_friendly_planet") };
         }
 
         if(camp.weaponType === 'mobile'){
             if(state.weapons.some(w=>w.camp===state.playerCampKey && w.type==='mobile')){
-                return { success:false, msg:`${camp.lwName}已建造！` };
+                return { success:false, msg:translate("weapon_built", { weapon: camp.lwName }) };
             }
-            if(planet.troop < 180) return { success:false, msg:"需要180兵力" };
+            if(planet.troop < 180) return { success:false, msg:translate("need_troops", { amount: 180 }) };
             
             planet.troop -= 180;
             state.weapons.push({
@@ -352,12 +362,12 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
                 decay: 0
             });
         } else {
-            if(planet.troop < 150) return { success:false, msg:"需要150兵力" };
+            if(planet.troop < 150) return { success:false, msg:translate("need_troops", { amount: 150 }) };
             const existingCount = state.weapons.filter(w=>
                 w.camp===state.playerCampKey && w.planetId===planet.uid
             ).length;
             if(existingCount >= 4){
-                return { success:false, msg:`该星球已部署了4个${camp.lwName}，无法继续部署。` };
+                return { success:false, msg:translate("planet_weapon_limit", { weapon: camp.lwName }) };
             }
             planet.troop -= 150;
             state.weapons.push({
@@ -518,12 +528,12 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
         if(weapon.type !== 'mobile'){
             state.selectedWeapon = null;
             render();
-            return { success:false, msg:"阴霾和寂域不可移动" };
+            return { success:false, msg:translate("mobile_weapon_immobile") };
         }
         if(state.weaponMovedThisTurn){
             state.selectedWeapon = null;
             render();
-            return { success:false, msg:"本回合已移动过武器，每回合只能移动一次" };
+            return { success:false, msg:translate("weapon_already_moved") };
         }
 
         // 移动到任意星球，不再检查相邻
@@ -718,15 +728,15 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
     }
 
     function onPlanetCaptured(planet: Planet, oldCamp: CampKey | null, newCamp: CampKey) {
-        if(planet.planetName==="麦拉芬蒙河" && oldCamp==="EARTH" && newCamp==="ROBOT" && !state.maiaRiverTriggered){
+        if(planet.planetName === translate("maia_river_name") && oldCamp === "EARTH" && newCamp === "ROBOT" && !state.maiaRiverTriggered){
             state.maiaRiverTriggered = true;
-            triggerEvent("麦拉芬蒙河战败", "机器人攻陷了战略要地麦拉芬蒙河。");
+            triggerEvent(translate("maia_river_defeat_title"), translate("maia_river_defeat_message"));
         }
         if(planet.isHome){
             if(newCamp===state.playerCampKey && oldCamp!==state.playerCampKey){
-                triggerEvent("母星占领", `我军占领了敌方母星：${planet.planetName}！`);
+                triggerEvent(translate("enemy_home_captured_title"), translate("enemy_home_captured_message", { planet: planet.planetName }));
             } else if(oldCamp===state.playerCampKey && newCamp!==state.playerCampKey && planet.originalCamp===state.playerCampKey){
-                triggerEvent("母星沦陷", `警报！我方母星 ${planet.planetName} 已被敌人占领！`);
+                triggerEvent(translate("home_lost_title"), translate("home_lost_message", { planet: planet.planetName }));
             }
         }
         checkEliminations();
@@ -737,7 +747,7 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
             if(state.planets.filter(p=>p.camp===ck).length===0 && !state.eliminationsTriggered.has(ck)){
                 state.eliminationsTriggered.add(ck);
                 if(ck !== state.playerCampKey){
-                    triggerEvent("阵营覆灭", CAMPS[ck].eliminationMessages.defeated);
+                    triggerEvent(translate("faction_eliminated"), CAMPS[ck].eliminationMessages.defeated);
                 }
             }
         });
@@ -748,7 +758,7 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
             if(p.isHome && p.originalCamp && p.originalCamp !== state.playerCampKey){
                 if(p.camp !== p.originalCamp && !state.homeFallTriggered.has(p.originalCamp)){
                     state.homeFallTriggered.add(p.originalCamp);
-                    triggerEvent("母星陷落", CAMPS[p.originalCamp].homeFall);
+                    triggerEvent(translate("home_fall_title"), CAMPS[p.originalCamp].homeFall);
                 }
             }
         });
@@ -776,14 +786,14 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
     }
 
     function performStrategicDraw() {
-        if(state.spectateMode) return { success:false, msg:"观战模式无法使用" };
-        if(state.turn < 10) return { success:false, msg:"前10回合无法使用战略机遇" };
+        if(state.spectateMode) return { success:false, msg:translate("strategic_unavailable") };
+        if(state.turn < 10) return { success:false, msg:translate("strategic_locked") };
         if(state.turn - state.lastDrawTurn < 10){
-            return { success:false, msg:`冷却中，还需等待${10-(state.turn-state.lastDrawTurn)}回合` };
+            return { success:false, msg:translate("strategic_cooldown", { turns: 10 - (state.turn - state.lastDrawTurn) }) };
         }
 
         const myPlanets = state.planets.filter(p=>p.camp===state.playerCampKey && p.troop>=30);
-        if(myPlanets.length === 0) return { success:false, msg:"没有星球兵力达到30" };
+        if(myPlanets.length === 0) return { success:false, msg:translate("no_planet_troops") };
 
         const payer = myPlanets[Math.floor(random()*myPlanets.length)];
         payer.troop -= 30;
@@ -809,8 +819,8 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
         const change = isPositive ? `+${effectAmt}` : `-${effectAmt}`;
 
         triggerEvent(
-            `战略机遇：${event.title} (${isPositive?'正面':'负面'})`,
-            `${finalDesc}\n目标：${targetPlanet.planetName}\n兵力变化：${change}（当前：${targetPlanet.troop}）`
+            translate("strategic_title", { title: event.title, result: isPositive ? translate("positive") : translate("negative") }),
+            translate("strategic_details", { description: finalDesc, planet: targetPlanet.planetName, change, troops: targetPlanet.troop })
         );
 
         render();
@@ -823,16 +833,16 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
         enemyCamps.forEach(ck=>{
             state.aiStrengthFactors[ck] = Math.floor(random()*4);
         });
-        triggerEvent("随机强度分配", "各敌方阵营已获得不同的额外兵力增长。");
+        triggerEvent(translate("random_strength_title"), translate("random_strength_message"));
         return { ...state.aiStrengthFactors } as Record<CampKey, number>;
     }
 
     function getStrengthDisplayText() {
         const enemyCamps = CAMP_KEYS.filter(ck=>ck !== state.playerCampKey);
         if(Object.keys(state.aiStrengthFactors).length===0 || enemyCamps.every(ck=>!state.aiStrengthFactors[ck])){
-            return "各阵营强度：未分配";
+            return translate("strength_unassigned");
         }
-        let text = "各阵营强度：";
+        let text = `${translate("strength_prefix")} `;
         enemyCamps.forEach(ck=>{
             text += `${CAMPS[ck].name}+${state.aiStrengthFactors[ck]||0} `;
         });
@@ -996,7 +1006,7 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
         const lightHome = state.planets.find(p=>p.isHome && p.camp==="LIGHT");
         if(lightHome) lightHome.troop += Math.floor(assaultPower * 0.3);
 
-        triggerEvent("光能突袭", "光能者大军突然降临，占领了多个星球！西斯舰队开始全面反攻。");
+        triggerEvent(translate("light_assault_title"), translate("light_assault_message"));
     }
 
     function nextTurn() {
@@ -1135,29 +1145,29 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
         const playerPower = power[state.playerCampKey] || 0;
         if(entries.every(([_,v])=>v > playerPower * 1.5)){
             state.weakWarningTriggered = true;
-            triggerEvent("势力衰弱", "我方总兵力已远逊于各个敌对势力，形势危急！");
+            triggerEvent(translate("power_weak_title"), translate("power_weak_message"));
         }
     }
 
     function activateFinal() {
-        if(state.spectateMode) return { success:false, msg:"观战模式无法启动" };
-        if(state.deterrenceActive) return { success:false, msg:"终结手段已经启动！" };
+        if(state.spectateMode) return { success:false, msg:translate("final_unavailable") };
+        if(state.deterrenceActive) return { success:false, msg:translate("final_already_active") };
 
         const camp = getCampWeaponDef(state.playerCampKey);
         if(!state.weapons.some(w=>w.camp===state.playerCampKey)){
-            return { success:false, msg:`需要先建造/部署${camp.lwName}` };
+            return { success:false, msg:translate("final_need_weapon", { weapon: camp.lwName }) };
         }
 
         const planet = state.selectedPlanets.length===1 ? state.selectedPlanets[0] : null;
         if(!planet || planet.camp !== state.playerCampKey){
-            return { success:false, msg:"选中己方星球启动" };
+            return { success:false, msg:translate("final_select_planet") };
         }
-        if(planet.troop < 400) return { success:false, msg:"需要400兵力" };
+        if(planet.troop < 400) return { success:false, msg:translate("need_troops", { amount: 400 }) };
 
         planet.troop -= 400;
         state.deterrenceActive = true;
         state.deterrenceTurnsLeft = 5;
-        triggerEvent("终结手段启动", "所有敌人将联合进攻，我方停止增长，持续5回合。守住母星即可获胜！");
+        triggerEvent(translate("final_started_title"), translate("final_started_message"));
 
         render();
         return { success:true };
@@ -1171,16 +1181,16 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
 
         let title = "", resultText = "", campMessage = "";
         if(victoryType === "conquest"){
-            title = "征服胜利";
-            resultText = "占领全部敌方星球，一统银河！";
+            title = translate("conquest_title");
+            resultText = translate("conquest_result");
             campMessage = camp.victorySpeech.conquest;
         } else if(victoryType === "deterrence"){
-            title = "威慑胜利";
-            resultText = "启动终极武器强制停战";
+            title = translate("deterrence_title");
+            resultText = translate("deterrence_result");
             campMessage = camp.victorySpeech.deterrence;
         } else {
-            title = "败北";
-            resultText = "你的最后一颗星球沦陷了，银河称霸梦碎";
+            title = translate("defeat_title");
+            resultText = translate("defeat_result");
             campMessage = camp.victorySpeech.defeat;
         }
 
@@ -1235,25 +1245,19 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
 
     function getTipsText() {
         const camp = CAMPS[state.playerCampKey];
-        let tip = `【${camp.name}军备】\n大型武器：${camp.lwName}（${camp.weaponType==='mobile'?'移动型·一次性建造':'部署型·可多次部署'}）\n终结手段：${camp.finName}（消耗400兵力）\n`;
-        if(camp.weaponType==='mobile'){
-            tip += `建造消耗180兵力，保卫+20、削弱30\n点击武器图标再点任意星球移动（敌方-20兵力，己方无损）\n每回合限移动1次`;
-        } else {
-            tip += `每次部署消耗150兵力，可在己方星球部署（每星球上限4个）\n己方星球保卫+20，敌方进攻削弱15\n敌方控制时每回合损兵5（可叠加）`;
-        }
-        tip += `\n◆ 资源星球：每回合额外+2兵力\n🎴 战略机遇：每10回合抽一次，消耗30兵力\n📦 拖拽框选或Shift+点击多选己方星球，再点目标集体调兵/进攻（补给线连通即可）`;
-        return tip;
+        const tipKey = camp.weaponType === "mobile" ? "tips_mobile" : "tips_deploy";
+        return translate(tipKey, { camp: camp.name, weapon: camp.lwName, final: camp.finName }) + translate("tips_common");
     }
 
     function getDrawButtonState() {
         if(state.turn < 10){
-            return { text: "战略机遇 (第10回合解锁)", disabled: true };
+            return { text: translate("draw_locked"), disabled: true };
         }
         const remaining = 10 - (state.turn - state.lastDrawTurn);
         if(remaining <= 0){
-            return { text: "战略机遇 (可用)", disabled: false };
+            return { text: translate("draw_available"), disabled: false };
         } else {
-            return { text: `战略机遇 (冷却 ${remaining} 回合)`, disabled: true };
+            return { text: translate("draw_cooldown", { turns: remaining }), disabled: true };
         }
     }
 
@@ -1262,16 +1266,16 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
         const myWeapons = state.weapons.filter(w=>w.camp===state.playerCampKey);
 
         if(state.deterrenceActive){
-            return `终结手段已启动！剩余${state.deterrenceTurnsLeft}回合`;
+            return translate("deterrence_status", { turns: state.deterrenceTurnsLeft });
         } else if(myWeapons.length === 0){
-            return "武器状态：无";
+            return translate("weapon_status_none");
         } else {
             if(camp.weaponType==='mobile'){
                 const w = myWeapons[0];
                 const planet = state.planets.find(p=>p.uid===w.planetId);
-                return `${camp.lwName}：已建造 (位于${planet?planet.planetName:'?'})`;
+                return translate("weapon_status_built", { weapon: camp.lwName, planet: planet?.planetName ?? "?" });
             } else {
-                return `${camp.lwName}：已部署${myWeapons.length}个`;
+                return translate("weapon_status_deployed", { weapon: camp.lwName, count: myWeapons.length });
             }
         }
     }

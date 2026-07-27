@@ -59,6 +59,7 @@ export interface CampConfig {
 export interface StrategicEvent {
   title: string;
   desc: string;
+
 }
 
 export interface StrategicEventPool {

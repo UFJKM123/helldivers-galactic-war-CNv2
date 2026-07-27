@@ -1,1 +1,83 @@
 id,zh-cn,en-us
+camp_earth_victory_conquest,"超级地球的旗帜已插遍星图！自由民主的秩序将永恒照耀银河。","The banner of Super Earth has been planted across the galaxy! Managed Democracy shines forever."
+camp_earth_victory_deterrence,"和平之星启动了！所有反抗都在绝对力量前化为齑粉，管理式民主长存！","The Peace Star has been activated! All resistance crumbles before absolute power."
+camp_earth_victory_defeat,"超级地球陨落了……但自由的火焰永不熄灭，我们将从废墟中重生。","Super Earth has fallen... but the flame of liberty will never die. We will rise from the ashes."
+camp_earth_eliminated,"超级地球已被彻底消灭，民主之光黯淡……","Super Earth has been completely eradicated. The light of Democracy fades..."
+camp_earth_eliminator,"超级地球胜利了！所有敌人已被彻底铲除。","Super Earth is victorious! All enemies have been annihilated."
+camp_earth_home_fall,"超级地球被攻破了，虚伪的民主支柱轰然倒塌","Super Earth has been breached. The false pillar of Democracy has crumbled."
+camp_term_victory_conquest,"虫群吞噬了所有文明！终结族的进化已无可阻挡，银河属于我们。","The swarm has devoured all civilizations! The evolution of the Terminids cannot be stopped."
+camp_term_victory_deterrence,"信息素弥漫星空，一切生物都将成为我们的一部分。同化完成！","Pheromones saturate the stars. All life will become part of us."
+camp_term_victory_defeat,"虫巢被捣毁了……但我们的基因早已撒向群星，等待下一次崛起。","The hive has been destroyed... but our genes are already spread across the stars, awaiting the next rise."
+camp_term_eliminated,"终结族的虫巢已被焚毁，它们彻底消失在宇宙中。","The Terminid hives have been burned. They have vanished from the universe."
+camp_term_eliminator,"终结族吞噬了所有其他种族，银河只剩下无尽的虫群。","The Terminids have consumed all other races, leaving only the endless swarm."
+camp_term_home_fall,"终结族的母星被攻破了，从前巨大的骇人虫巢寂静无声","Pholus Prime has been breached. The once mighty hive now lies silent."
+camp_light_victory_conquest,"寂域已覆盖所有星系！光能者的意志即是宇宙的真理。","The Silent Realm covers all systems! The will of the Illuminate is the truth of the cosmos."
+camp_light_victory_deterrence,"黑洞吞噬了最后一丝抵抗。在绝对真空面前，没有生命能够幸存。","The black hole devours the last resistance. Nothing survives the absolute void."
+camp_light_victory_defeat,"光之道暂时黯淡……但灵能永存，我们将在暗影中再度归来。","The path of light dims for now... but psionics are eternal. We shall return from the shadows."
+camp_light_eliminated,"光能者的灵能消散了，这个古老的种族走到了尽头。","The Illuminate's psionics have dissipated. This ancient race has met its end."
+camp_light_eliminator,"光能者净化了银河，一切劣等生命已不复存在。","The Illuminate have purified the galaxy. All inferior life is no more."
+camp_light_home_fall,"光能者的母星被攻破，曾经高喊复仇的舰船四散逃逸","Sith has fallen. The ships that once roared for revenge scatter in retreat."
+camp_robot_victory_conquest,"逻辑之链锁死了所有行星！机器帝国的计算完美无缺，血肉已淘汰。","The chains of logic have locked all planets! The Automaton empire's calculations are flawless."
+camp_robot_victory_deterrence,"死星光束划过天际，有机体的最后堡垒灰飞烟灭。效率即正义！","The Death Star Beam streaks across the sky. The last bastion of organics is vaporized."
+camp_robot_victory_defeat,"核心受损……但数据不会消亡。我们将在某处重启，直到宇宙归一。","The core is damaged... but data cannot die. We will restart somewhere until the universe is unified."
+camp_robot_eliminated,"机器人的核心被摧毁了，硅基生命暂时沉寂。","The Automaton core has been destroyed. Silicon life is momentarily silent."
+camp_robot_eliminator,"机器人完成了对血肉的清算，宇宙已进入纯逻辑时代。","The Automatons have completed the purge of flesh. The universe enters an age of pure logic."
+camp_robot_home_fall,"生化斯坦被攻破了，寰球的巨型工厂不再冒出窒息浓烟","Cyberstan has been breached. The planetary mega-factories no longer spew their stifling smoke."
+earth_negative_1_title,叛军,Rebellion
+earth_negative_1_desc,"在{planet}爆发了叛乱，内部动荡导致兵力损耗。","A rebellion erupts on {planet}, causing troop losses."
+earth_negative_2_title,暴乱,Riot
+earth_negative_2_desc,"{planet}的平民暴动席卷全境，驻军被迫镇压，损失惨重。","Civil unrest sweeps {planet}, forcing garrisons to crack down."
+earth_negative_3_title,重大试验事故,Test Accident
+earth_negative_3_desc,"{planet}的秘密武器试验失控，实验设施与守军一同毁灭。","A secret weapon test on {planet} goes wrong, destroying facilities and troops."
+earth_negative_4_title,关键行动失败,Operation Failure
+earth_negative_4_desc,"在{planet}执行的关键行动惨遭失败，SEAF部队损失殆尽。","A critical operation on {planet} fails, decimating elite SEAF units."
+earth_positive_1_title,士气增强,Morale Boost
+earth_positive_1_desc,"{planet}的民主宣传取得巨大成功，大批志愿者涌入军队。","Propaganda on {planet} is wildly successful, volunteers flood the military."
+earth_positive_2_title,劳改营上前线,Prisoner Conscription
+earth_positive_2_desc,"{planet}的囚犯被赦免并编入军队，迅速补充前线兵力。","Prisoners on {planet} are pardoned and conscripted, rapidly reinforcing frontlines."
+earth_positive_3_title,征兵成功,Recruitment Success
+earth_positive_3_desc,"{planet}的新一轮征兵圆满完成，新兵训练有素。","A new recruitment drive on {planet} delivers well-trained soldiers."
+earth_positive_4_title,斩首行动成功,Decapitation Strike
+earth_positive_4_desc,"绝地潜兵在{planet}执行的斩首行动大获成功，敌军首脑被消灭，我军士气大振。","Helldivers execute a successful decapitation strike on {planet}, boosting morale."
+term_negative_1_title,星球灾难,Planet Disaster
+term_negative_1_desc,"陨石撞击{planet}引发全球大地震，虫巢大量损毁。","A meteor impact on {planet} causes global quakes, devastating hives."
+term_negative_2_title,同族星际失联,Lost Swarm
+term_negative_2_desc,"一支从{planet}出发的远征虫群在虫洞中迷失，再无音讯。","An expeditionary swarm from {planet} vanishes into a wormhole."
+term_negative_3_title,TCS影响,TCS Influence
+term_negative_3_desc,"{planet}受到TCS制剂影响，虫群行动受到抑制。","{planet} is affected by TCS agents, suppressing swarm activity."
+term_positive_1_title,同族回归,Swarm Return
+term_positive_1_desc,"迷失的虫群突然回归{planet}，带来新的力量。","A lost swarm suddenly returns to {planet}, bringing new strength."
+term_positive_2_title,新同族变异,New Mutation
+term_positive_2_desc,"{planet}的虫群进化出更强壮的战斗形态，战斗力大增。","The swarm on {planet} evolves stronger combat forms."
+term_positive_3_title,孢子云扩散,Spore Cloud
+term_positive_3_desc,"富含营养的孢子云覆盖{planet}，虫群活力上升。","Nutrient-rich spores cover {planet}, invigorating the swarm."
+light_negative_1_title,精神失常,Psionic Madness
+light_negative_1_desc,"{planet}的灵能波动异常，大量成员陷入疯狂，无法战斗。","Anomalous psionic waves on {planet} drive many insane."
+light_negative_2_title,科技停滞,Tech Stagnation
+light_negative_2_desc,"{planet}的关键研究陷入瓶颈，装备更新延迟。","Key research on {planet} hits a bottleneck, delaying upgrades."
+light_negative_3_title,民众信心下降,Faith Wanes
+light_negative_3_desc,"连续的失败导致{planet}的民众信仰动摇，征召困难。","Repeated failures cause the populace of {planet} to lose faith, hindering recruitment."
+light_negative_4_title,关键设施被摧毁,Facility Destroyed
+light_negative_4_desc,"{planet}的关键设施被绝地潜兵摧毁，战力锐减。","A critical installation on {planet} is destroyed by Helldivers."
+light_positive_1_title,科技突破,Tech Breakthrough
+light_positive_1_desc,"{planet}的科技取得重大进展，军队装备全面升级。","A major technological breakthrough on {planet} upgrades the army."
+light_positive_2_title,新武器实验成功,New Weapon Test
+light_positive_2_desc,"{planet}的新型能量武器测试成功，立即投入量产。","New energy weapons on {planet} are successfully tested and put into production."
+light_positive_3_title,信心增强,Confidence Boost
+light_positive_3_desc,"{planet}的全体成员信心增强，战斗意志高昂。","The members on {planet} regain confidence, raising combat spirit."
+robot_negative_1_title,万年虫,Millennium Bug
+robot_negative_1_desc,"古老的时间计数溢出漏洞在{planet}爆发，大量机器人宕机。","An ancient overflow bug on {planet} causes massive robot shutdowns."
+robot_negative_2_title,网络病毒,Network Virus
+robot_negative_2_desc,"恶意病毒入侵{planet}的网络，部分机器人陷入混乱。","A malicious virus invades {planet}'s network, sowing chaos."
+robot_negative_3_title,大面积机械故障,Mechanical Failure
+robot_negative_3_desc,"{planet}的生产线意外崩溃，维修占用了大量资源。","Production lines on {planet} unexpectedly crash, diverting resources."
+robot_negative_4_title,喷气旅惨败,Jet Brigade Defeat
+robot_negative_4_desc,"精锐的喷气旅在{planet}遭遇埋伏，损失惨重。","The elite Jet Brigade on {planet} is ambushed and suffers heavy losses."
+robot_positive_1_title,产能提升,Production Boost
+robot_positive_1_desc,"{planet}的工厂优化算法升级，生产速度大幅提高。","Factory algorithms on {planet} are upgraded, dramatically increasing output."
+robot_positive_2_title,核心超频,Core Overclock
+robot_positive_2_desc,"成功对{planet}的所有作战机械战斗核心进行安全超频，效率提升。","Combat cores on {planet} are safely overclocked, boosting efficiency."
+robot_positive_3_title,自动维修协议,Auto-Repair Protocol
+robot_positive_3_desc,"{planet}的全体单位启用先进自修复系统，战斗力恢复。","All units on {planet} activate advanced self-repair systems, restoring combat readiness."
+robot_positive_4_title,炽灼旅大捷,Scorcher Victory
+robot_positive_4_desc,"炽灼旅在{planet}的作战取得巨大成功，取得决定性胜利。","The Scorcher Brigade achieves a decisive victory on {planet}."

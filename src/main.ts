@@ -1,5 +1,8 @@
 import { createApp } from "vue";
-import App from "./App.vue";
 import "./styles/main.css";
+import { localeReady } from "./i18n";
 
-createApp(App).mount("#app");
+void localeReady.then(async () => {
+  const { default: App } = await import("./App.vue");
+  createApp(App).mount("#app");
+});
