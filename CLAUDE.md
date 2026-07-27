@@ -1,49 +1,47 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This repository is a Vue 3 + Vite + TypeScript client-side turn-based strategy game. The app has no backend or persistence layer; campaign state is held in memory and the galaxy is rendered to a canvas.
 
-## Project Overview
+## Development
 
-This is a dependency-free, client-side turn-based strategy game. There is no package manager, bundler, framework, backend, or persistence layer. `index.html` loads plain JavaScript files into browser globals and renders the galaxy on a `<canvas>` alongside a fixed-width DOM control panel.
-
-Because localization uses `fetch()`, serve the repository over HTTP rather than opening `index.html` directly:
+Install dependencies and start the app with:
 
 ```bash
-python3 -m http.server 8000
-# Open http://localhost:8000/
-# English UI: http://localhost:8000/?lang=en-us
+npm install
+npm run dev
+# Open the URL printed by Vite
+# English UI: append ?lang=en-us
 ```
 
-There is currently no automated test suite or lint configuration, so there is no single-test command. Use syntax checks as the baseline verification:
+Use these checks before submitting changes:
 
 ```bash
-for f in js/*.js; do node --check "$f" || exit 1; done
+npm run typecheck
+npm run test:run
+npm run build
 python3 -m py_compile develop_tools/csv2json.py
 ```
 
-For gameplay changes, also run the app in a browser and exercise the affected setup, canvas interaction, turn progression, and game-end flow. Campaign maps are generated with `Math.random()`, so behavior is not deterministic.
+Use `npm run preview` to exercise the production build. Gameplay changes must also be checked in a browser: setup controls, Canvas click/Shift selection/drag selection, troop movement and attack, turn progression, weapons, strategic events, deterrence, victory/defeat, and language switching. Maps use injected randomness in tests and `Math.random` in production, so campaign layouts are not fixed.
 
 ## Architecture
 
-Scripts are loaded in dependency order at the end of `index.html`: `config.js`, `i18n.js`, `gameEngine.js`, `ui.js`, then `main.js`. They use IIFEs assigned to `window`; there are no ES modules.
+- `src/main.ts` mounts `src/App.vue`; `src/styles/main.css` contains the global layout and responsive styles.
+- `src/components/GalaxyCanvas.vue` owns Canvas mounting and input forwarding. `src/components/GameControlPanel.vue` renders controls. `src/components/EventModal.vue` and `src/components/ResultModal.vue` render queued events and game-end results.
+- `src/composables/useGame.ts` is the UI/game boundary. It owns the engine instance, reactive public-state snapshot, actions, errors, events, result state, and restart options. Do not put game rules in Vue event handlers.
+- `src/game/config.ts` contains static balance and campaign data. `src/game/types.ts` contains shared domain contracts.
+- `src/game/GameEngine.ts` owns mutable campaign state, procedural galaxy generation, selection, combat, AI, weapons, events, win/defeat checks, and the Canvas input contract. Preserve the `nextTurn()` pipeline ordering when adding mechanics.
+- `src/game/CanvasRenderer.ts` contains the pure Canvas drawing implementation. `src/game/rules/` contains rule helpers suitable for unit tests.
+- `src/i18n/index.ts` loads all five locale namespaces from `public/lang/<locale>/`, supports `?lang=zh-cn|en-us`, and exposes `t()` to Vue. Runtime strings that are not yet translated remain in the engine by design.
 
-- `js/config.js` defines static game data through `window.GameConfig`: map-size parameters, faction definitions and weapon properties, strategic-event pools, and the planet-name pool. Balance/data changes belong here when they do not require new behavior.
-- `js/gameEngine.js` owns all mutable campaign state, procedural galaxy generation, graph connectivity, canvas rendering, selection and combat, AI turns, weapons, events, and victory/defeat. Its private `state` is exposed only through methods such as `getPublicState()`. UI notifications cross the boundary through `onEvent`, `onGameEnd`, and `onStateChange` callbacks supplied to `init()`.
-- `js/ui.js` is the DOM adapter. It caches controls, binds buttons/selects/mouse events to engine methods, renders engine-derived status into the side panel, and queues event modals. Keep game rules in the engine rather than event handlers here.
-- `js/main.js` is the bootstrap layer. On `DOMContentLoaded`, it reads the `?lang=` query parameter, loads translations, wires engine callbacks to the UI, initializes both modules, and starts the default campaign. Changing language reloads the page with a new query parameter.
-- `js/i18n.js` loads locale JSON and replaces text on elements marked with `data-lang`. It currently fetches only the `info` and `menu` namespaces. Many runtime strings in `config.js`, `gameEngine.js`, and `ui.js` are still hard-coded Chinese and do not pass through `I18n.t()`.
-- `index.html` defines the entire UI and modal structure; `css/style.css` supplies all styling. The engine assumes the side panel is 340 px wide when sizing the canvas, matching `#uiPanel` in CSS.
-
-The galaxy is an in-memory graph: planet objects are stored in `state.planets`, links hold direct references to endpoint planets, and each link has a stable `idPair` used by `blockedLinks`. Friendly supply-line reachability uses BFS over that graph. Selection stores planet object references, so restarting must clear selections before replacing the generated graph.
-
-`nextTurn()` is the central simulation pipeline: deployed-weapon attrition, AI troop transfer and attacks, faction growth, AI weapon behavior, mode-specific events, deterrence countdown, end-state checks, selection reset, state notification, and rendering. Preserve this ordering deliberately when adding turn mechanics.
+The galaxy is an in-memory graph. Planet objects are stored in `state.planets`, links retain endpoint references, and each link has a stable `idPair` used by `blockedLinks`. Friendly supply-line reachability is BFS over that graph. Restart clears selections before replacing the generated graph.
 
 ## Localization Workflow
 
-The editable translation source is `lang/lang_csv/*.csv`. Each CSV uses `id` as the first column and locale directory names (`zh-cn`, `en-us`) as the remaining headers. Regenerate locale JSON from the repository root with:
+The editable source is `lang/lang_csv/*.csv`; `id` is the first column and locale directories (`zh-cn`, `en-us`) are the remaining headers. Regenerate runtime JSON from the repository root:
 
 ```bash
 python3 develop_tools/csv2json.py
 ```
 
-The script rewrites corresponding files under `lang/<locale>/`, so review all generated changes. A Windows executable (`csv2json.exe`) is also checked in, but the Python source is the portable and inspectable workflow. When adding a new translation namespace, add its CSV/JSON files and also include the namespace in the `modules` array in `js/i18n.js`; merely generating the JSON does not load it in the browser.
+The script writes corresponding files under `public/lang/<locale>/`, which Vite serves as static assets. Review generated changes. When adding a namespace, add its CSV and locale files and include the namespace in `src/i18n/index.ts`.

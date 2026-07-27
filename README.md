@@ -12,6 +12,34 @@
 
 以超级地球、终结族等阵营对抗为核心的回合制星图策略游戏。在星图上占领星球、调度兵力、利用特殊单位改变战局，包含前线兵力调度、航道行军、特殊单位部署等策略机制。
 
+## 🛠️ 开发与运行
+
+项目使用 Vue 3、Vite 和 TypeScript 构建，需要 Node.js 22 或更高版本。
+
+```bash
+npm install
+npm run dev
+# 浏览器打开 Vite 输出的地址
+# 英文界面：在地址后添加 ?lang=en-us
+```
+
+验证和生产构建：
+
+```bash
+npm run typecheck
+npm run test:run
+npm run build
+npm run preview
+```
+
+本地化 CSV 源文件位于 `lang/lang_csv/`，生成运行时 JSON：
+
+```bash
+python3 develop_tools/csv2json.py
+```
+
+生成文件位于 `public/lang/<locale>/`。游戏状态只保存在浏览器内存中，不提供后端或存档功能。
+
 ## 📋 更新日志
 
 ### V4.0

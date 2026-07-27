@@ -6,7 +6,29 @@ If you like this game, feel free to join our [Discord server](https://discord.gg
 This game is a fan-made work and has no affiliation, endorsement, or partnership with *Helldivers* or its copyright holders **Arrowhead Game Studios** and **Sony Interactive Entertainment**. All related characters, settings, names, and other intellectual property belong to their respective owners. This work is non-commercial and created for fan exchange and learning purposes only, with no profit motive.
 
 ## 📌 Project Overview
-A turn-based galactic strategy game with faction-based confrontations centered around Super Earth, Terminids, etc. On the galactic map, players occupy planets, dispatch troops, and use special units to change the battlefield. Includes strategic mechanics such as front-line troop deployment, lane maneuvering, and special unit deployment.
+A turn-based galactic strategy game with faction-based confrontations centered around Super Earth, Terminids, etc. On the galactic map, players occupy planets, dispatch troops, and use special units to change the battlefield. Includes front-line troop deployment, lane maneuvering, and special unit deployment.
+
+## 🛠️ Development
+
+The project uses Vue 3, Vite, and TypeScript. Node.js 22 or newer is required.
+
+```bash
+npm install
+npm run dev
+# Open the URL printed by Vite
+# English UI is the default; use ?lang=zh-cn for Chinese
+```
+
+Run checks and a production build with:
+
+```bash
+npm run typecheck
+npm run test:run
+npm run build
+npm run preview
+```
+
+Editable localization sources are under `lang/lang_csv/`. Regenerate the runtime JSON files with `python3 develop_tools/csv2json.py`; output is written to `public/lang/<locale>/`. Campaign state is held in browser memory and there is no backend or save layer.
 
 ## 📋 Update Log
 

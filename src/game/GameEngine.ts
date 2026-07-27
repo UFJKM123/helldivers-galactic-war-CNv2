@@ -1,7 +1,91 @@
-window.GameEngine = (function() {
-    const { MAP_SIZES, CAMPS, CAMP_KEYS, STRATEGIC_EVENTS, PLANET_NAME_LIST } = GameConfig;
+// The original simulation is intentionally kept behavior-equivalent during the migration.
+import { CAMPS, CAMP_KEYS, MAP_SIZES, PLANET_NAME_LIST, STRATEGIC_EVENTS } from "./config";
+import { renderGalaxy } from "./CanvasRenderer";
+import { arePlanetsConnected } from "./rules/connectivity";
+import { calculateScore, resolveCombat } from "./rules/combat";
+import { getPowerByCamp } from "./rules/power";
+import type {
+    ActionResult,
+    CampKey,
+    Difficulty,
+    EngineCallbacks,
+    GameMode,
+    GameResult,
+    Link,
+    MapConfig,
+    MapSize,
+    Planet,
+    PublicGameState,
+    RandomSource,
+    RestartOptions,
+    VictoryType,
+    Weapon,
+} from "./types";
 
-    const state = {
+export interface GameEngine {
+    init(canvas: HTMLCanvasElement, callbacks?: EngineCallbacks): void;
+    restart(options?: RestartOptions): void;
+    resizeCanvas(): void;
+    render(): void;
+    nextTurn(): void;
+    buildWeapon(): ActionResult;
+    activateFinal(): ActionResult;
+    performStrategicDraw(): ActionResult;
+    randomizeEnemyStrength(): Record<CampKey, number>;
+    getStrengthDisplayText(): string;
+    getTipsText(): string;
+    getDrawButtonState(): { text: string; disabled: boolean };
+    getWeaponStatusText(): string;
+    getPublicState(): PublicGameState;
+    getCampWeaponDef(campKey: CampKey): (typeof CAMPS)[CampKey];
+    setSendRatio(value: string): void;
+    startSpectate(): void;
+    handleMouseDown(event: MouseEvent): void;
+    handleMouseMove(event: MouseEvent): void;
+    handleMouseUp(event: MouseEvent): ActionResult | undefined;
+}
+
+interface InternalState {
+    canvas: HTMLCanvasElement | null;
+    ctx: CanvasRenderingContext2D | null;
+    planets: Planet[];
+    links: Link[];
+    blockedLinks: Set<string>;
+    playerCampKey: CampKey;
+    difficulty: Difficulty;
+    gameMode: GameMode;
+    turn: number;
+    selectedWeapon: Weapon | null;
+    weapons: Weapon[];
+    statKills: number;
+    lastDrawTurn: number;
+    aiStrengthFactors: Partial<Record<CampKey, number>>;
+    deterrenceActive: boolean;
+    deterrenceTurnsLeft: number;
+    eliminationsTriggered: Set<CampKey>;
+    maiaRiverTriggered: boolean;
+    lastWeakCamp: CampKey | null;
+    spectateMode: boolean;
+    weakWarningTriggered: boolean;
+    currentMapSize: MapSize;
+    currentConfig: MapConfig;
+    selectedPlanets: Planet[];
+    eventQueue: unknown[];
+    homeFallTriggered: Set<CampKey>;
+    weaponMovedThisTurn: boolean;
+    isMouseDown: boolean;
+    dragStartX: number;
+    dragStartY: number;
+    hasDragged: boolean;
+    boxStartX: number;
+    boxStartY: number;
+    boxEndX: number;
+    boxEndY: number;
+    sendRatio: number;
+}
+
+export function createGameEngine(random: RandomSource = Math.random): GameEngine {
+    const state: InternalState = {
         canvas: null,
         ctx: null,
         planets: [],
@@ -24,7 +108,7 @@ window.GameEngine = (function() {
         spectateMode: false,
         weakWarningTriggered: false,
         currentMapSize: "large",
-        currentConfig: null,
+        currentConfig: MAP_SIZES.large,
         selectedPlanets: [],
         eventQueue: [],
         homeFallTriggered: new Set(),
@@ -40,13 +124,9 @@ window.GameEngine = (function() {
         sendRatio: 1.0
     };
 
-    let callbacks = {
-        onEvent: null,
-        onGameEnd: null,
-        onStateChange: null
-    };
+    let callbacks: EngineCallbacks = {};
 
-    function init(canvas, cb) {
+    function init(canvas: HTMLCanvasElement, cb: EngineCallbacks = {}) {
         state.canvas = canvas;
         state.ctx = canvas.getContext("2d");
         callbacks = { ...callbacks, ...cb };
@@ -54,21 +134,23 @@ window.GameEngine = (function() {
     }
 
     function getDifficultyParams() {
-        switch(state.difficulty){
-            case 'easy': return {neutMin:4,neutMax:14,aiThreshold:20,aiExtraGrowth:false};
-            case 'hard': return {neutMin:12,neutMax:38,aiThreshold:5,aiExtraGrowth:true};
-            default: return {neutMin:6,neutMax:22,aiThreshold:10,aiExtraGrowth:false};
+        switch (state.difficulty) {
+            case "easy": return { neutMin: 4, neutMax: 14, aiThreshold: 20, aiExtraGrowth: false };
+            case "hard": return { neutMin: 12, neutMax: 38, aiThreshold: 5, aiExtraGrowth: true };
+            default: return { neutMin: 6, neutMax: 22, aiThreshold: 10, aiExtraGrowth: false };
         }
     }
 
     function resizeCanvas() {
         if (!state.canvas || !state.ctx) return;
-        state.canvas.width = window.innerWidth - 340;
-        state.canvas.height = window.innerHeight;
+        const width = state.canvas.parentElement?.clientWidth || window.innerWidth - 340;
+        const height = state.canvas.parentElement?.clientHeight || window.innerHeight;
+        state.canvas.width = Math.max(1, width);
+        state.canvas.height = Math.max(1, height);
         if(state.planets.length) render();
     }
 
-    function restart(options = {}) {
+    function restart(options: RestartOptions = {}) {
         resizeCanvas();
 
         state.playerCampKey = options.playerCampKey || "EARTH";
@@ -125,16 +207,18 @@ window.GameEngine = (function() {
     }
 
     function generateGalaxy() {
-        const W = state.canvas.width, H = state.canvas.height, pad = state.currentConfig.canvasPad;
+        const canvas = state.canvas;
+        if (!canvas) return;
+        const W = canvas.width, H = canvas.height, pad = state.currentConfig.canvasPad;
         const corners = [{x:pad,y:pad},{x:W-pad,y:pad},{x:pad,y:H-pad},{x:W-pad,y:H-pad}];
-        const shuffled = [...CAMP_KEYS].sort(()=>Math.random()-0.5);
+        const shuffled = [...CAMP_KEYS].sort(() => random() - 0.5);
         
         shuffled.forEach((ck,idx)=>{
             state.planets.push({
                 x:corners[idx].x, y:corners[idx].y,
                 camp:ck, originalCamp:ck, isHome:true, troop:70,
                 planetName:CAMPS[ck].homeName,
-                uid:Math.random().toString(36).slice(2,10),
+                uid:random().toString(36).slice(2,10),
                 resource:false
             });
         });
@@ -149,31 +233,32 @@ window.GameEngine = (function() {
             state.planets.push({
                 x:ox, y:oy, camp:"EARTH", originalCamp:"EARTH",
                 isHome:false, troop:10, planetName:"麦拉芬蒙河",
-                uid:Math.random().toString(36).slice(2,10), resource:false
+                uid:random().toString(36).slice(2,10), resource:false
             });
         }
 
         const diff = getDifficultyParams();
-        let namePool = [...PLANET_NAME_LIST].sort(()=>Math.random()-0.5);
+        let namePool = [...PLANET_NAME_LIST].sort(()=>random()-0.5);
         const totalNormal = state.currentConfig.planetTotal - 5;
         const resourceIndices = new Set();
         while(resourceIndices.size < state.currentConfig.resourceCount){
-            resourceIndices.add(Math.floor(Math.random()*totalNormal));
+            resourceIndices.add(Math.floor(random()*totalNormal));
         }
 
         for(let i=0;i<totalNormal;i++){
-            let x,y;
+            let x = 0;
+            let y = 0;
             do{
-                x = pad + Math.random()*(W-pad*2);
-                y = pad + Math.random()*(H-pad*2);
+                x = pad + random()*(W-pad*2);
+                y = pad + random()*(H-pad*2);
             } while(state.planets.some(p=>Math.hypot(p.x-x,p.y-y)<40));
             
-            const initT = Math.floor(Math.random()*(diff.neutMax-diff.neutMin)) + diff.neutMin;
-            let pname = namePool.length>0 ? namePool.shift() : "星球"+i;
+            const initT = Math.floor(random()*(diff.neutMax-diff.neutMin)) + diff.neutMin;
+            const pname = namePool.shift() ?? `星球${i}`;
             state.planets.push({
                 x, y, camp:null, originalCamp:null,
                 isHome:false, troop:initT, planetName:pname,
-                uid:Math.random().toString(36).slice(2,10),
+                uid:random().toString(36).slice(2,10),
                 resource:resourceIndices.has(i)
             });
         }
@@ -218,94 +303,25 @@ window.GameEngine = (function() {
 
     function render() {
         if (!state.ctx || !state.canvas) return;
-        const ctx = state.ctx;
-        ctx.clearRect(0,0,state.canvas.width,state.canvas.height);
-
-        state.links.forEach(ln=>{
-            const isBlock = state.blockedLinks.has(ln.idPair);
-            ctx.beginPath();
-            ctx.moveTo(ln.a.x, ln.a.y);
-            ctx.lineTo(ln.b.x, ln.b.y);
-            ctx.strokeStyle = isBlock ? "#aa4444" : "#5a7aaa";
-            ctx.lineWidth = isBlock ? 2 : 1;
-            ctx.stroke();
+        renderGalaxy(state.ctx, {
+            width: state.canvas.width,
+            height: state.canvas.height,
+            links: state.links,
+            planets: state.planets,
+            weapons: state.weapons,
+            blockedLinks: state.blockedLinks,
+            selectedPlanets: state.selectedPlanets,
+            selectedWeapon: state.selectedWeapon,
+            isMouseDown: state.isMouseDown,
+            hasDragged: state.hasDragged,
+            boxStartX: state.boxStartX,
+            boxStartY: state.boxStartY,
+            boxEndX: state.boxEndX,
+            boxEndY: state.boxEndY,
         });
-
-        state.planets.forEach(p=>{
-            const r = p.isHome ? 16 : 10;
-            const campData = p.camp ? CAMPS[p.camp] : null;
-
-            if(state.selectedPlanets.some(sp=>sp.uid===p.uid)){
-                ctx.beginPath();
-                ctx.arc(p.x,p.y,r+6,0,Math.PI*2);
-                ctx.strokeStyle = "#ffd700";
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            }
-
-            if(state.selectedWeapon && state.selectedWeapon.planetId === p.uid){
-                ctx.beginPath();
-                ctx.arc(p.x,p.y,r+5,0,Math.PI*2);
-                ctx.strokeStyle = "#fff";
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            }
-
-            ctx.beginPath();
-            ctx.arc(p.x,p.y,r,0,Math.PI*2);
-            ctx.fillStyle = campData ? campData.color : "#505050";
-            ctx.fill();
-
-            if(p.isHome){
-                ctx.beginPath();
-                ctx.arc(p.x,p.y,r+3,0,Math.PI*2);
-                ctx.strokeStyle = "#ffdd00";
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            }
-
-            if(p.resource){
-                ctx.fillStyle = "#ffaa00";
-                ctx.font = "12px Arial";
-                ctx.fillText("◆", p.x, p.y-r-2);
-            }
-
-            ctx.fillStyle = "#fff";
-            ctx.font = "bold 11px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText(p.troop, p.x, p.y+r+13);
-
-            ctx.fillStyle = "#aaa";
-            ctx.font = "8px Microsoft Yahei";
-            ctx.fillText(p.planetName, p.x, p.y+r+22);
-
-            const planetWeapons = state.weapons.filter(w=>w.planetId===p.uid);
-            if(planetWeapons.length){
-                let yOff = p.y - r - 8;
-                planetWeapons.forEach(w=>{
-                    const wc = CAMPS[w.camp];
-                    ctx.fillStyle = wc ? wc.color : "#fff";
-                    ctx.font = "16px Arial";
-                    ctx.fillText(w.type==='mobile'?'◈':'⬢', p.x, yOff);
-                    yOff -= 16;
-                });
-            }
-        });
-
-        if(state.isMouseDown && state.hasDragged){
-            const x = Math.min(state.boxStartX, state.boxEndX);
-            const y = Math.min(state.boxStartY, state.boxEndY);
-            const w = Math.abs(state.boxEndX - state.boxStartX);
-            const h = Math.abs(state.boxEndY - state.boxStartY);
-            ctx.strokeStyle = "#00ffff";
-            ctx.lineWidth = 1.5;
-            ctx.strokeRect(x, y, w, h);
-            ctx.fillStyle = "rgba(0,255,255,0.1)";
-            ctx.fillRect(x, y, w, h);
-        }
     }
 
-    function getCampWeaponDef(campKey) {
+    function getCampWeaponDef(campKey: CampKey) {
         return CAMPS[campKey];
     }
 
@@ -327,7 +343,7 @@ window.GameEngine = (function() {
             
             planet.troop -= 180;
             state.weapons.push({
-                id: Math.random().toString(36).slice(2,8),
+                id: random().toString(36).slice(2,8),
                 camp: state.playerCampKey,
                 type: 'mobile',
                 planetId: planet.uid,
@@ -345,7 +361,7 @@ window.GameEngine = (function() {
             }
             planet.troop -= 150;
             state.weapons.push({
-                id: Math.random().toString(36).slice(2,8),
+                id: random().toString(36).slice(2,8),
                 camp: state.playerCampKey,
                 type: 'deploy',
                 planetId: planet.uid,
@@ -359,7 +375,7 @@ window.GameEngine = (function() {
         return { success:true };
     }
 
-    function findWeaponAtPos(mx, my) {
+    function findWeaponAtPos(mx: number, my: number): Weapon | null {
         for(let w of state.weapons){
             const planet = state.planets.find(p=>p.uid===w.planetId);
             if(!planet) continue;
@@ -375,35 +391,16 @@ window.GameEngine = (function() {
         return null;
     }
 
-    function arePlayerPlanetsConnected(a, b) {
-        if(a.uid === b.uid) return true;
-        const visited = new Set();
-        const queue = [a];
-        visited.add(a.uid);
-
-        while(queue.length > 0){
-            const cur = queue.shift();
-            for(let ln of state.links){
-                let neighbor = null;
-                if(ln.a.uid === cur.uid) neighbor = ln.b;
-                else if(ln.b.uid === cur.uid) neighbor = ln.a;
-                else continue;
-                if(state.blockedLinks.has(ln.idPair)) continue;
-                if(neighbor.camp !== state.playerCampKey) continue;
-                if(neighbor.uid === b.uid) return true;
-                if(!visited.has(neighbor.uid)){
-                    visited.add(neighbor.uid);
-                    queue.push(neighbor);
-                }
-            }
-        }
-        return false;
+    function arePlayerPlanetsConnected(a: Planet, b: Planet): boolean {
+        return arePlanetsConnected(state.links, state.blockedLinks, state.playerCampKey, a, b);
     }
 
-    function handleMouseDown(e) {
+    function handleMouseDown(e: MouseEvent) {
         if(state.spectateMode) return;
         if(e.button !== 0) return;
-        const rect = state.canvas.getBoundingClientRect();
+        const canvas = state.canvas;
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
         state.dragStartX = e.clientX - rect.left;
         state.dragStartY = e.clientY - rect.top;
         state.boxStartX = state.boxEndX = state.dragStartX;
@@ -412,9 +409,11 @@ window.GameEngine = (function() {
         state.hasDragged = false;
     }
 
-    function handleMouseMove(e) {
+    function handleMouseMove(e: MouseEvent) {
         if(!state.isMouseDown || state.spectateMode) return;
-        const rect = state.canvas.getBoundingClientRect();
+        const canvas = state.canvas;
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
         const mx = e.clientX - rect.left;
         const my = e.clientY - rect.top;
         const dx = mx - state.dragStartX;
@@ -431,7 +430,7 @@ window.GameEngine = (function() {
         }
     }
 
-    function handleMouseUp(e) {
+    function handleMouseUp(e: MouseEvent): ActionResult | undefined {
         if(!state.isMouseDown || state.spectateMode) return;
         state.isMouseDown = false;
 
@@ -454,9 +453,11 @@ window.GameEngine = (function() {
         }
     }
 
-    function handleCanvasClick(evt) {
+    function handleCanvasClick(evt: MouseEvent): ActionResult | undefined {
         if(state.spectateMode) return;
-        const rect = state.canvas.getBoundingClientRect();
+        const canvas = state.canvas;
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
         const mx = evt.clientX - rect.left;
         const my = evt.clientY - rect.top;
 
@@ -510,9 +511,11 @@ window.GameEngine = (function() {
         }
     }
 
-    function handleWeaponMove(targetPlanet) {
+    function handleWeaponMove(targetPlanet: Planet): ActionResult {
         // 只允许移动型武器移动
-        if(state.selectedWeapon.type !== 'mobile'){
+        const weapon = state.selectedWeapon;
+        if (!weapon) return { success: false };
+        if(weapon.type !== 'mobile'){
             state.selectedWeapon = null;
             render();
             return { success:false, msg:"阴霾和寂域不可移动" };
@@ -524,9 +527,9 @@ window.GameEngine = (function() {
         }
 
         // 移动到任意星球，不再检查相邻
-        state.selectedWeapon.planetId = targetPlanet.uid;
+        weapon.planetId = targetPlanet.uid;
         // 修复bug：仅对非己方星球扣20兵力
-        if(targetPlanet.camp !== state.selectedWeapon.camp) {
+        if(targetPlanet.camp !== weapon.camp) {
             targetPlanet.troop = Math.max(1, targetPlanet.troop - 20);
         }
         state.weaponMovedThisTurn = true;
@@ -536,7 +539,7 @@ window.GameEngine = (function() {
         return { success:true };
     }
 
-    function handleSinglePlanetAction(target) {
+    function handleSinglePlanetAction(target: Planet): ActionResult {
         const source = state.selectedPlanets[0];
         if(source.uid === target.uid){
             state.selectedPlanets = [];
@@ -587,7 +590,7 @@ window.GameEngine = (function() {
         return { success:true };
     }
 
-    function handleMultiPlanetAction(target) {
+    function handleMultiPlanetAction(target: Planet): ActionResult {
         const ratio = getSendRatio();
 
         if(target.camp === state.playerCampKey){
@@ -672,7 +675,7 @@ window.GameEngine = (function() {
         return { success:true };
     }
 
-    function moveTroops(from, to) {
+    function moveTroops(from: Planet, to: Planet): ActionResult {
         const ratio = getSendRatio();
         const sendTroop = Math.floor(from.troop * ratio);
         if(sendTroop <= 0) return { success:false };
@@ -681,11 +684,13 @@ window.GameEngine = (function() {
         return { success:true };
     }
 
-    function executeAttack(from, to) {
+    function executeAttack(from: Planet, to: Planet): void {
         const ratio = getSendRatio();
         let attackTroop = Math.floor(from.troop * ratio);
         from.troop -= attackTroop;
         const oldCamp = to.camp;
+        const attackingCamp = from.camp;
+        if (!attackingCamp) return;
 
         const targetWeapons = state.weapons.filter(w=>w.planetId===to.uid);
         let guardBonus = 0, weakenEffect = 0;
@@ -702,9 +707,9 @@ window.GameEngine = (function() {
 
         if(result > 0){
             state.statKills += to.troop;
-            to.camp = from.camp;
+            to.camp = attackingCamp;
             to.troop = result;
-            onPlanetCaptured(to, oldCamp, from.camp);
+            onPlanetCaptured(to, oldCamp, attackingCamp);
             checkConquestWin();
         } else {
             state.statKills += Math.min(attackTroop, to.troop);
@@ -712,7 +717,7 @@ window.GameEngine = (function() {
         }
     }
 
-    function onPlanetCaptured(planet, oldCamp, newCamp) {
+    function onPlanetCaptured(planet: Planet, oldCamp: CampKey | null, newCamp: CampKey) {
         if(planet.planetName==="麦拉芬蒙河" && oldCamp==="EARTH" && newCamp==="ROBOT" && !state.maiaRiverTriggered){
             state.maiaRiverTriggered = true;
             triggerEvent("麦拉芬蒙河战败", "机器人攻陷了战略要地麦拉芬蒙河。");
@@ -766,7 +771,7 @@ window.GameEngine = (function() {
         return state.sendRatio || 1.0;
     }
 
-    function setSendRatio(val) {
+    function setSendRatio(val: string) {
         state.sendRatio = parseFloat(val || "1.0");
     }
 
@@ -780,21 +785,21 @@ window.GameEngine = (function() {
         const myPlanets = state.planets.filter(p=>p.camp===state.playerCampKey && p.troop>=30);
         if(myPlanets.length === 0) return { success:false, msg:"没有星球兵力达到30" };
 
-        const payer = myPlanets[Math.floor(Math.random()*myPlanets.length)];
+        const payer = myPlanets[Math.floor(random()*myPlanets.length)];
         payer.troop -= 30;
 
         const campEvents = STRATEGIC_EVENTS[state.playerCampKey];
-        const isPositive = Math.random() < 0.5;
+        const isPositive = random() < 0.5;
         const pool = isPositive ? campEvents.positive : campEvents.negative;
-        const event = pool[Math.floor(Math.random()*pool.length)];
+        const event = pool[Math.floor(random()*pool.length)];
 
         const targetPlanet = state.planets.filter(p=>p.camp===state.playerCampKey)
-            [Math.floor(Math.random()*state.planets.filter(p=>p.camp===state.playerCampKey).length)];
+            [Math.floor(random()*state.planets.filter(p=>p.camp===state.playerCampKey).length)];
         if(!targetPlanet) return { success:false };
 
         const effectAmt = isPositive
-            ? Math.floor(Math.random()*25) + 25
-            : Math.floor(Math.random()*20) + 5;
+            ? Math.floor(random()*25) + 25
+            : Math.floor(random()*20) + 5;
         
         if(isPositive) targetPlanet.troop += effectAmt;
         else targetPlanet.troop = Math.max(1, targetPlanet.troop - effectAmt);
@@ -812,14 +817,14 @@ window.GameEngine = (function() {
         return { success:true };
     }
 
-    function randomizeEnemyStrength() {
+    function randomizeEnemyStrength(): Record<CampKey, number> {
         const enemyCamps = CAMP_KEYS.filter(ck=>ck !== state.playerCampKey);
         state.aiStrengthFactors = {};
         enemyCamps.forEach(ck=>{
-            state.aiStrengthFactors[ck] = Math.floor(Math.random()*4);
+            state.aiStrengthFactors[ck] = Math.floor(random()*4);
         });
         triggerEvent("随机强度分配", "各敌方阵营已获得不同的额外兵力增长。");
-        return state.aiStrengthFactors;
+        return { ...state.aiStrengthFactors } as Record<CampKey, number>;
     }
 
     function getStrengthDisplayText() {
@@ -834,11 +839,11 @@ window.GameEngine = (function() {
         return text;
     }
 
-    function aiActionNeutralOnly(campKey, threshold) {
+    function aiActionNeutralOnly(campKey: CampKey, threshold: number): void {
         const aiPlanets = state.planets.filter(p=>p.camp===campKey);
         aiPlanets.forEach(ownPlanet => {
             if(ownPlanet.troop < threshold) return;
-            let targets = [];
+            const targets: Planet[] = [];
             state.links.forEach(ln=>{
                 if(ln.a.uid===ownPlanet.uid && ln.b.camp===null && !state.blockedLinks.has(ln.idPair)) targets.push(ln.b);
                 else if(ln.b.uid===ownPlanet.uid && ln.a.camp===null && !state.blockedLinks.has(ln.idPair)) targets.push(ln.a);
@@ -859,7 +864,7 @@ window.GameEngine = (function() {
             if(buildPlanet.troop >= 180){
                 buildPlanet.troop -= 180;
                 state.weapons.push({
-                    id: Math.random().toString(36).slice(2,8),
+                    id: random().toString(36).slice(2,8),
                     camp: campKey, type: 'mobile',
                     planetId: buildPlanet.uid,
                     guardBonus: campDef.guardBonus,
@@ -882,7 +887,7 @@ window.GameEngine = (function() {
                     if(buildPlanet.troop >= 180){
                         buildPlanet.troop -= 180;
                         state.weapons.push({
-                            id: Math.random().toString(36).slice(2,8),
+                            id: random().toString(36).slice(2,8),
                             camp: campKey, type: 'mobile',
                             planetId: buildPlanet.uid,
                             guardBonus: campDef.guardBonus,
@@ -921,7 +926,7 @@ window.GameEngine = (function() {
                     if(payer.troop >= 150 && target){
                         payer.troop -= 150;
                         state.weapons.push({
-                            id: Math.random().toString(36).slice(2,8),
+                            id: random().toString(36).slice(2,8),
                             camp: campKey, type: 'deploy',
                             planetId: target.uid,
                             guardBonus: campDef.guardBonus,
@@ -934,7 +939,7 @@ window.GameEngine = (function() {
         });
     }
 
-    function aiTransferTroops(campKey) {
+    function aiTransferTroops(campKey: CampKey): void {
         const aiPlanets = state.planets.filter(p=>p.camp===campKey);
         if(aiPlanets.length<2) return;
 
@@ -948,7 +953,7 @@ window.GameEngine = (function() {
 
         aiPlanets.forEach(p=>{
             if(frontPlanets.includes(p) || p.troop<=10) return;
-            let bestTarget = null, bestDist = Infinity;
+            let bestTargetUid: string | null = null, bestDist = Infinity;
             frontPlanets.forEach(fp=>{
                 const ln = state.links.find(l=>
                     (l.a.uid===p.uid && l.b.uid===fp.uid) ||
@@ -956,9 +961,12 @@ window.GameEngine = (function() {
                 );
                 if(ln && !state.blockedLinks.has(ln.idPair)){
                     const d = Math.hypot(p.x-fp.x, p.y-fp.y);
-                    if(d < bestDist){ bestDist = d; bestTarget = fp; }
+                    if(d < bestDist){ bestDist = d; bestTargetUid = fp.uid; }
                 }
             });
+            const bestTarget = bestTargetUid
+                ? frontPlanets.find((planet) => planet.uid === bestTargetUid)
+                : undefined;
             if(bestTarget){
                 const transfer = Math.floor(p.troop * 0.7);
                 p.troop -= transfer;
@@ -981,7 +989,7 @@ window.GameEngine = (function() {
         state.planets.forEach(p=>{ if(p.camp) totalPower += p.troop; });
         const assaultPower = Math.floor(totalPower * 0.4);
         const targetCount = Math.min(neutralPlanets.length, Math.floor(state.currentConfig.planetTotal * 0.1));
-        const selectedTargets = neutralPlanets.sort(()=>Math.random()-0.5).slice(0, targetCount);
+        const selectedTargets = neutralPlanets.sort(()=>random()-0.5).slice(0, targetCount);
         const avgTroop = Math.floor(assaultPower / targetCount);
 
         selectedTargets.forEach(p=>{ p.camp = "LIGHT"; p.troop = avgTroop; });
@@ -1026,7 +1034,7 @@ window.GameEngine = (function() {
 
         CAMP_KEYS.forEach(ck=>{
             if(ck!==state.playerCampKey && state.aiStrengthFactors[ck]){
-                state.planets.forEach(p=>{ if(p.camp===ck) p.troop += state.aiStrengthFactors[ck]; });
+                state.planets.forEach(p=>{ if(p.camp===ck) p.troop += state.aiStrengthFactors[ck] ?? 0; });
             }
         });
 
@@ -1056,10 +1064,10 @@ window.GameEngine = (function() {
         render();
     }
 
-    function aiAction(ownPlanet, threshold, onlyCamp=null) {
+    function aiAction(ownPlanet: Planet, threshold: number, onlyCamp: CampKey | null = null): void {
         if(ownPlanet.troop < threshold) return;
 
-        let targets = [];
+        let targets: Planet[] = [];
         state.links.forEach(ln=>{
             if(ln.a.uid===ownPlanet.uid && ln.b.camp!==ownPlanet.camp && !state.blockedLinks.has(ln.idPair)){
                 if(onlyCamp===null || ln.b.camp===onlyCamp) targets.push(ln.b);
@@ -1085,6 +1093,8 @@ window.GameEngine = (function() {
 
         const target = targets[0];
         const oldCamp = target.camp;
+        const attackingCamp = ownPlanet.camp;
+        if (!attackingCamp) return;
         const ratio = (ownPlanet.troop > target.troop*2) ? 0.9 : 0.7;
         const send = Math.floor(ownPlanet.troop * ratio);
         ownPlanet.troop -= send;
@@ -1103,9 +1113,9 @@ window.GameEngine = (function() {
         const res = effectiveAttack - defendTroop;
 
         if(res > 0){
-            target.camp = ownPlanet.camp;
+            target.camp = attackingCamp;
             target.troop = res;
-            onPlanetCaptured(target, oldCamp, ownPlanet.camp);
+            onPlanetCaptured(target, oldCamp, attackingCamp);
             checkConquestWin();
             if(!state.spectateMode) checkDefeat();
         } else {
@@ -1115,7 +1125,7 @@ window.GameEngine = (function() {
 
     function checkPowerBalance() {
         if(state.turn <= 40 || state.weakWarningTriggered) return;
-        const power = {};
+        const power = getPowerByCamp(state.planets, CAMP_KEYS);
         CAMP_KEYS.forEach(ck=>{
             power[ck] = state.planets.filter(p=>p.camp===ck).reduce((s,p)=>s+p.troop, 0);
         });
@@ -1153,11 +1163,11 @@ window.GameEngine = (function() {
         return { success:true };
     }
 
-    function endGame(victoryType) {
+    function endGame(victoryType: VictoryType): void {
         if(state.spectateMode) return;
         const camp = CAMPS[state.playerCampKey];
         const playerOwned = state.planets.filter(p=>p.camp===state.playerCampKey).length;
-        const scoreRaw = Math.round(playerOwned*9 + state.statKills*0.22 + state.turn*2);
+        const scoreRaw = calculateScore(playerOwned, state.statKills, state.turn);
 
         let title = "", resultText = "", campMessage = "";
         if(victoryType === "conquest"){
@@ -1191,7 +1201,7 @@ window.GameEngine = (function() {
         state.spectateMode = true;
     }
 
-    function triggerEvent(title, message) {
+    function triggerEvent(title: string, message: string): void {
         if(callbacks.onEvent){
             callbacks.onEvent(title, message);
         }
@@ -1207,13 +1217,19 @@ window.GameEngine = (function() {
         return {
             turn: state.turn,
             playerCampKey: state.playerCampKey,
+            planets: [...state.planets],
+            links: [...state.links],
             selectedPlanets: [...state.selectedPlanets],
             selectedWeapon: state.selectedWeapon,
             weapons: [...state.weapons],
             deterrenceActive: state.deterrenceActive,
             deterrenceTurnsLeft: state.deterrenceTurnsLeft,
             spectateMode: state.spectateMode,
-            statKills: state.statKills
+            statKills: state.statKills,
+            sendRatio: state.sendRatio,
+            gameMode: state.gameMode,
+            difficulty: state.difficulty,
+            mapSize: state.currentMapSize,
         };
     }
 
@@ -1280,6 +1296,6 @@ window.GameEngine = (function() {
         startSpectate,
         handleMouseDown,
         handleMouseMove,
-        handleMouseUp
+        handleMouseUp,
     };
-})();
+}

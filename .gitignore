@@ -3,8 +3,12 @@ develop_tools/dist
 develop_tools/*.spec
 .vscode/
 
-#-----------------------------------------------------------------------------------------
-# Python
+# Vite / Node
+node_modules/
+dist/
+.vite/
+coverage/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
