@@ -28,7 +28,7 @@ npm run build
 npm run preview
 ```
 
-Editable localization sources are under `lang/lang_csv/`. Regenerate the runtime JSON files with `python3 develop_tools/csv2json.py`; output is written to `public/lang/<locale>/`. Campaign state is held in browser memory and there is no backend or save layer.
+Editable localization sources are under `lang_csv/`. Regenerate the runtime JSON files with `python3 develop_tools/csv2json.py`; output is written to `public/lang/<locale>/`. Campaign state is held in browser memory and there is no backend or save layer.
 
 ## 📋 Update Log
 

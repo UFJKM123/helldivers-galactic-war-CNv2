@@ -32,7 +32,7 @@ npm run build
 npm run preview
 ```
 
-本地化 CSV 源文件位于 `lang/lang_csv/`，生成运行时 JSON：
+本地化 CSV 源文件位于 `lang_csv/`，生成运行时 JSON：
 
 ```bash
 python3 develop_tools/csv2json.py
