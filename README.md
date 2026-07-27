@@ -42,6 +42,10 @@ python3 develop_tools/csv2json.py
 
 ## 📋 更新日志
 
+### V5.0.0
+- 重构：
+  使用vite重构项目
+
 ### V4.0
 - 修复：
   1. 大面积代码重构

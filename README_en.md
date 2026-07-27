@@ -32,6 +32,20 @@ Editable localization sources are under `lang_csv/`. Regenerate the runtime JSON
 
 ## 📋 Update Log
 
+### V5.0.0
+- Refactor:
+  Rebuilt the project with Vite.
+
+### V4.0
+- Fixes:
+  1. Large-scale code refactoring.
+  2. DSS and ASS can now only move to adjacent planets.
+  3. DSS and ASS no longer incorrectly deduct friendly forces.
+  4. Restored the Shift multi-select functionality.
+- New Features:
+  1. Single-select planet attack now follows the same rule as box-select: it can proceed as long as a friendly path connects to the target.
+  2. Integrated English version.
+
 ### V3.15
 - Fixes:
   1. Fixed: DSS/ASS will not move
