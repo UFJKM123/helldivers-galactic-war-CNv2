@@ -40,5 +40,8 @@
     "spectate_note": "Spectate",
     "new_match_note": "New Match",
     "event_note": "Event",
-    "confirm_note": "Confirm"
+    "confirm_note": "Confirm",
+    "faction_stats": "Faction Stats",
+    "stats_planets": "Planets:",
+    "stats_troops": "Troops:"
 }

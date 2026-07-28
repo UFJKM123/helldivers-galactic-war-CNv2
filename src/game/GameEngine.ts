@@ -295,6 +295,7 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
     }
 
     function ensureConnectivity() {
+        // 第一步：确保每个星球至少有一条航道
         state.planets.forEach(p=>{
             const hasLink = state.links.some(l=>l.a.uid===p.uid||l.b.uid===p.uid);
             if(!hasLink){
@@ -309,6 +310,51 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
                 }
             }
         });
+
+        // 第二步：BFS 找出所有连通分量，确保整个星图连通
+        const visited = new Set<string>();
+        const components: Planet[][] = [];
+
+        state.planets.forEach(p=>{
+            if(visited.has(p.uid)) return;
+            const component: Planet[] = [];
+            const queue = [p];
+            visited.add(p.uid);
+            while(queue.length > 0){
+                const current = queue.shift()!;
+                component.push(current);
+                state.links.forEach(l=>{
+                    if(l.a.uid===current.uid && !visited.has(l.b.uid)){
+                        visited.add(l.b.uid);
+                        queue.push(l.b);
+                    } else if(l.b.uid===current.uid && !visited.has(l.a.uid)){
+                        visited.add(l.a.uid);
+                        queue.push(l.a);
+                    }
+                });
+            }
+            components.push(component);
+        });
+
+        // 如果有多个连通分量，用最短距离的边连接它们
+        for(let i=1; i<components.length; i++){
+            let bestDist = Infinity;
+            let bestA: Planet | null = null;
+            let bestB: Planet | null = null;
+            components[0].forEach(a=>{
+                components[i].forEach(b=>{
+                    const d = Math.hypot(a.x-b.x, a.y-b.y);
+                    if(d < bestDist){ bestDist = d; bestA = a; bestB = b; }
+                });
+            });
+            if(bestA && bestB){
+                const idPair = [bestA.uid, bestB.uid].sort().join("_");
+                if(!state.links.some(l=>l.idPair===idPair)){
+                    state.links.push({a: bestA, b: bestB, idPair});
+                }
+                components[0].push(...components[i]);
+            }
+        }
     }
 
     function render() {
@@ -727,16 +773,16 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
         }
     }
 
-    function onPlanetCaptured(planet: Planet, oldCamp: CampKey | null, newCamp: CampKey) {
+    function onPlanetCaptured(planet: Planet, oldCamp: CampKey | null, newCamp: CampKey, isPlayerAction: boolean = true) {
         if(planet.planetName === translate("maia_river_name") && oldCamp === "EARTH" && newCamp === "ROBOT" && !state.maiaRiverTriggered){
             state.maiaRiverTriggered = true;
             triggerEvent(translate("maia_river_defeat_title"), translate("maia_river_defeat_message"));
         }
-        if(planet.isHome){
+        if(planet.isHome && isPlayerAction){
             if(newCamp===state.playerCampKey && oldCamp!==state.playerCampKey){
                 triggerEvent(translate("enemy_home_captured_title"), translate("enemy_home_captured_message", { planet: planet.planetName }));
-            } else if(oldCamp===state.playerCampKey && newCamp!==state.playerCampKey && planet.originalCamp===state.playerCampKey){
-                triggerEvent(translate("home_lost_title"), translate("home_lost_message", { planet: planet.planetName }));
+                // 标记已触发，避免回合末 checkHomeFallEvents 重复弹出 home_fall_title
+                if(planet.originalCamp) state.homeFallTriggered.add(planet.originalCamp);
             }
         }
         checkEliminations();
@@ -755,10 +801,16 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
 
     function checkHomeFallEvents() {
         state.planets.forEach(p=>{
-            if(p.isHome && p.originalCamp && p.originalCamp !== state.playerCampKey){
-                if(p.camp !== p.originalCamp && !state.homeFallTriggered.has(p.originalCamp)){
+            if(p.isHome && p.originalCamp && !state.homeFallTriggered.has(p.originalCamp)){
+                if(p.camp !== p.originalCamp){
                     state.homeFallTriggered.add(p.originalCamp);
-                    triggerEvent(translate("home_fall_title"), CAMPS[p.originalCamp].homeFall);
+                    if(p.originalCamp === state.playerCampKey){
+                        // AI 占领了玩家母星
+                        triggerEvent(translate("home_lost_title"), translate("home_lost_message", { planet: p.planetName }));
+                    } else {
+                        // AI 之间的母星沦陷
+                        triggerEvent(translate("home_fall_title"), CAMPS[p.originalCamp].homeFall);
+                    }
                 }
             }
         });
@@ -808,7 +860,7 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
         if(!targetPlanet) return { success:false };
 
         const effectAmt = isPositive
-            ? Math.floor(random()*25) + 25
+            ? Math.floor(random()*50) + 50
             : Math.floor(random()*20) + 5;
         
         if(isPositive) targetPlanet.troop += effectAmt;
@@ -1125,7 +1177,7 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
         if(res > 0){
             target.camp = attackingCamp;
             target.troop = res;
-            onPlanetCaptured(target, oldCamp, attackingCamp);
+            onPlanetCaptured(target, oldCamp, attackingCamp, false);
             checkConquestWin();
             if(!state.spectateMode) checkDefeat();
         } else {

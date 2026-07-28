@@ -40,5 +40,8 @@
     "spectate_note": "观战",
     "new_match_note": "再来一局",
     "event_note": "事件",
-    "confirm_note": "确定"
+    "confirm_note": "确定",
+    "faction_stats": "阵营统计",
+    "stats_planets": "星球：",
+    "stats_troops": "兵力："
 }

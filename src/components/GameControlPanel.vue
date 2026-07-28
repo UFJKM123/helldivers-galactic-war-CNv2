@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { ref, computed } from "vue";
 import type { GameViewModel } from "../composables/useGame";
-import { CAMPS } from "../game/config";
+import { CAMPS, CAMP_KEYS } from "../game/config";
+import type { CampKey } from "../game/types";
 
 const props = defineProps<{ game: GameViewModel }>();
 const { t } = props.game as GameViewModel & { t?: (path: string) => string };
@@ -10,6 +12,42 @@ const campOptions = [
   ["LIGHT", "menu.camp_light"],
   ["ROBOT", "menu.camp_robot"],
 ] as const;
+
+const showStats = ref(false);
+
+interface FactionStat {
+  campKey: CampKey | null;
+  campName: string;
+  color: string;
+  planetCount: number;
+  troopCount: number;
+}
+
+const factionStats = computed<FactionStat[]>(() => {
+  const planets = props.game.state.value?.planets ?? [];
+  const stats: FactionStat[] = [];
+  CAMP_KEYS.forEach((ck) => {
+    const campPlanets = planets.filter((p) => p.camp === ck);
+    stats.push({
+      campKey: ck,
+      campName: CAMPS[ck].name,
+      color: CAMPS[ck].color,
+      planetCount: campPlanets.length,
+      troopCount: campPlanets.reduce((sum, p) => sum + p.troop, 0),
+    });
+  });
+  const neutralPlanets = planets.filter((p) => p.camp === null);
+  if (neutralPlanets.length > 0) {
+    stats.push({
+      campKey: null,
+      campName: "中立",
+      color: "#888888",
+      planetCount: neutralPlanets.length,
+      troopCount: neutralPlanets.reduce((sum, p) => sum + p.troop, 0),
+    });
+  }
+  return stats;
+});
 </script>
 
 <template>
@@ -58,6 +96,18 @@ const campOptions = [
       <div class="info-line">{{ t?.("menu.turn_number_display") ?? "回合：" }} <span>{{ props.game.state.value?.turn ?? 1 }}</span></div>
       <div class="info-line">{{ t?.("menu.selected_object_display") ?? "选中对象：" }} <span>{{ props.game.selectedCount.value }}</span></div>
       <div class="info-line">{{ t?.("menu.planet_name_display") ?? "星球名称：" }} <span>{{ props.game.selectedNames.value }}</span></div>
+      <div class="stats-toggle" @click="showStats = !showStats">
+        <span class="stats-toggle-icon">{{ showStats ? "▾" : "▸" }}</span>
+        <span>{{ t?.("menu.faction_stats") ?? "阵营统计" }}</span>
+      </div>
+      <div v-if="showStats" class="stats-panel">
+        <div v-for="stat in factionStats" :key="stat.campKey ?? 'neutral'" class="stat-row">
+          <span class="stat-color" :style="{ background: stat.color }"></span>
+          <span class="stat-name">{{ stat.campName }}</span>
+          <span class="stat-planets">{{ t?.("menu.stats_planets") ?? "星球" }}: {{ stat.planetCount }}</span>
+          <span class="stat-troops">{{ t?.("menu.stats_troops") ?? "兵力" }}: {{ stat.troopCount.toLocaleString() }}</span>
+        </div>
+      </div>
       <div class="send-selector">
         <label for="send-ratio-select">{{ t?.("menu.deployment_ratio") ?? "派兵比例：" }}</label>
         <select id="send-ratio-select" :value="props.game.sendRatio.value" @change="props.game.setSendRatio(($event.target as HTMLSelectElement).value)">

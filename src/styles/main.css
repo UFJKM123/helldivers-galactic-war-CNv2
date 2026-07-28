@@ -294,6 +294,69 @@ hr {
   font-size: 16px;
 }
 
+.stats-toggle {
+  margin: 5px 0;
+  padding: 5px 8px;
+  border: 1px solid #333a70;
+  border-radius: 4px;
+  background: #161a38;
+  color: #aaa;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.stats-toggle:hover {
+  background: #1e234a;
+  color: #ddd;
+}
+.stats-toggle-icon {
+  font-size: 12px;
+  width: 12px;
+  text-align: center;
+}
+.stats-panel {
+  margin: 2px 0 6px;
+  padding: 6px 8px;
+  border: 1px solid #2a2f58;
+  border-radius: 4px;
+  background: #0e1124;
+  font-size: 12px;
+}
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  border-bottom: 1px solid #1a1d3a;
+}
+.stat-row:last-child {
+  border-bottom: none;
+}
+.stat-color {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.stat-name {
+  width: 40px;
+  font-weight: 700;
+  color: #ccc;
+}
+.stat-planets {
+  flex: 1;
+  text-align: right;
+  color: #88aaff;
+}
+.stat-troops {
+  flex: 1;
+  text-align: right;
+  color: #88ff88;
+}
+
 @media (max-width: 760px) {
   body,
   .game-shell {

@@ -41,3 +41,6 @@ spectate_note,观战,Spectate
 new_match_note,再来一局,New Match
 event_note,事件,Event
 confirm_note,确定,Confirm
+faction_stats,阵营统计,Faction Stats
+stats_planets,星球：,Planets:
+stats_troops,兵力：,Troops:
