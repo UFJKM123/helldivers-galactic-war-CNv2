@@ -3,7 +3,7 @@ game_spectate_unavailable,观战模式无法操作,Actions are unavailable in Sp
 game_select_friendly_planet,请选中己方星球,Select your own planet!
 game_weapon_built,{weapon}已建造！,{weapon} already built!
 game_need_troops,需要{amount}兵力,Need {amount} troops
-game_maia_river_name,麦拉芬蒙河,Malfinmon River
+game_maia_river_name,麦拉芬蒙河,Malevelon Creek
 game_planet_name_fallback,星球{index},Planet-{index}
 game_planet_weapon_limit,该星球已部署了4个{weapon}，无法继续部署。,Planet already has 4 {weapon}.
 game_mobile_weapon_immobile,阴霾和寂域不可移动,Gloom and Silent Realm cannot be moved.
