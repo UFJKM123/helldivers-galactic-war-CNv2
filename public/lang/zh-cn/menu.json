@@ -40,5 +40,12 @@
     "spectate_note": "观战",
     "new_match_note": "再来一局",
     "event_note": "事件",
-    "confirm_note": "确定"
+    "confirm_note": "确定",
+    "faction_stats": "阵营统计",
+    "stats_planets": "星球：",
+    "stats_troops": "兵力：",
+    "set_strength": "设定强度",
+    "set_strength_title": "设定阵营强度",
+    "set_strength_hint": "每个阵营每回合额外增加的兵力值",
+    "cancel": "取消"
 }

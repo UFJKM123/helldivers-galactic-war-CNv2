@@ -103,23 +103,30 @@ select {
 .diff-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  margin: 4px 0;
+}
+.xdisplay .info-line {
   white-space: nowrap;
-}
-
-.diff-row {
-  margin: 5px 0;
-}
-
-.diff-row select {
-  flex: 1 1 auto;
-  width: auto;
 }
 
 .diff-row button {
   width: auto;
-  flex: 0 0 auto;
+  flex: 1;
   white-space: nowrap;
+}
+
+.mode-diff-row {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0;
+}
+.mode-diff-col {
+  flex: 1;
+  min-width: 0;
+}
+.mode-diff-col select {
+  width: 100%;
 }
 
 .send-selector select {
@@ -130,12 +137,23 @@ select {
   width: 100%;
   min-width: 0;
   margin: 4px 0;
-  padding: 5px;
-  border: 1px solid #4c527c;
-  border-radius: 3px;
-  background: #f5f5f5;
-  color: #111;
+  padding: 4px 6px;
+  border: 1px solid #3a3f6a;
+  border-radius: 4px;
+  background: #141832;
+  color: #c8d0e8;
   font-size: 13px;
+  appearance: auto;
+  cursor: pointer;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+select:hover {
+  border-color: #5a64b0;
+}
+select:focus {
+  border-color: #6a74d0;
+  box-shadow: 0 0 0 1px #6a74d0;
+  outline: none;
 }
 
 button {
@@ -292,6 +310,117 @@ hr {
 .score-text {
   margin: 10px 0;
   font-size: 16px;
+}
+
+.stats-toggle {
+  margin: 5px 0;
+  padding: 3px 6px;
+  border-radius: 3px;
+  color: #88aaff;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.stats-toggle:hover {
+  background: #1a1e3a;
+  color: #aaccff;
+}
+.stats-toggle-icon {
+  font-size: 11px;
+  width: 10px;
+  text-align: center;
+}
+.stats-panel {
+  margin: 2px 0 6px;
+  padding: 6px 8px;
+  border: 1px solid #2a2f58;
+  border-radius: 4px;
+  background: #0e1124;
+  font-size: 11px;
+}
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+.stat-header {
+  color: #666;
+  font-size: 10px;
+  border-bottom: 1px solid #1a1d3a;
+  margin-bottom: 1px;
+  padding-bottom: 3px;
+}
+.stat-color,
+.stat-color-placeholder {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.stat-color-placeholder {
+  visibility: hidden;
+}
+.stat-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  color: #ccc;
+  white-space: nowrap;
+}
+.stat-planets {
+  width: 40px;
+  text-align: right;
+  color: #88aaff;
+  flex-shrink: 0;
+}
+.stat-troops {
+  width: 60px;
+  text-align: right;
+  color: #88ff88;
+  flex-shrink: 0;
+}
+
+/* 设定强度弹窗 */
+.strength-modal {
+  text-align: left !important;
+}
+.strength-hint {
+  margin: 4px 0 12px !important;
+  font-size: 13px !important;
+  color: #aaa !important;
+}
+.strength-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+.strength-label {
+  flex: 1;
+  font-size: 14px;
+  color: #ddd;
+}
+.strength-input {
+  width: 70px;
+  padding: 5px 8px;
+  border: 1px solid #4c527c;
+  border-radius: 3px;
+  background: #f5f5f5;
+  color: #111;
+  font-size: 14px;
+  text-align: center;
+}
+.strength-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+.strength-buttons button {
+  flex: 1;
 }
 
 @media (max-width: 760px) {
