@@ -32,11 +32,21 @@ Editable localization sources are under `lang_csv/`. Regenerate the runtime JSON
 
 ## 📋 Update Log
 
+### V5.2.0
+- Fixes：
+  1. Fixed issue where small star maps could have disconnected isolated nodes.
+  2. Optimized the “Homeworld Lost” pop-up: now displays in real-time when the player captures an enemy homeworld; for AI actions, the judgment is deferred until the end of the turn.
+- Balance：
+  Changed the base random value for Strategic Opportunities to 50 and the offset value to 50 (previously both were 25).
+- New Features：
+  1. Added an in-game statistics panel and a custom random difficulty button.
+  2. UI art optimized.
+
 ### V5.1.0
 - Fixes:
-- 1.fixed language assistance
+  fixed language assistance
 - now all the text can change language synchronously and easy to add new language or fix translate mistakes
-- 2.added link of github page
+  added link of github page
 
 ### V5.0.0
 - Refactor:
