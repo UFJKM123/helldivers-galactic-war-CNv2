@@ -6,7 +6,7 @@ game_need_troops,需要{amount}兵力,Need {amount} troops
 game_maia_river_name,麦拉芬蒙河,Malevelon Creek
 game_planet_name_fallback,星球{index},Planet-{index}
 game_planet_weapon_limit,该星球已部署了4个{weapon}，无法继续部署。,Planet already has 4 {weapon}.
-game_mobile_weapon_immobile,阴霾和寂域不可移动,Gloom and Silent Realm cannot be moved.
+game_mobile_weapon_immobile,阴霾和寂域不可移动,The Gloom and The Void cannot be moved.
 game_weapon_already_moved,本回合已移动过武器，每回合只能移动一次,Already moved this turn; weapons can only move once per turn.
 game_maia_river_defeat_title,麦拉芬蒙河战败,Malevelon Creek Defeat
 game_maia_river_defeat_message,机器人攻陷了战略要地麦拉芬蒙河,The Automatons have captured the strategic Malevelon Creek.
