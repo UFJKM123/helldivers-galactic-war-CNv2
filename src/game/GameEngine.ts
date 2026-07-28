@@ -33,6 +33,7 @@ export interface GameEngine {
     activateFinal(): ActionResult;
     performStrategicDraw(): ActionResult;
     randomizeEnemyStrength(): Record<CampKey, number>;
+    setStrengthFactors(values: Partial<Record<CampKey, number>>): void;
     getStrengthDisplayText(): string;
     getTipsText(): string;
     getDrawButtonState(): { text: string; disabled: boolean };
@@ -889,6 +890,15 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
         return { ...state.aiStrengthFactors } as Record<CampKey, number>;
     }
 
+    function setStrengthFactors(values: Partial<Record<CampKey, number>>) {
+        const enemyCamps = CAMP_KEYS.filter(ck => ck !== state.playerCampKey);
+        enemyCamps.forEach(ck => {
+            if(values[ck] !== undefined){
+                state.aiStrengthFactors[ck] = Math.max(0, Math.floor(values[ck]!));
+            }
+        });
+    }
+
     function getStrengthDisplayText() {
         const enemyCamps = CAMP_KEYS.filter(ck=>ck !== state.playerCampKey);
         if(Object.keys(state.aiStrengthFactors).length===0 || enemyCamps.every(ck=>!state.aiStrengthFactors[ck])){
@@ -1342,6 +1352,7 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
         activateFinal,
         performStrategicDraw,
         randomizeEnemyStrength,
+        setStrengthFactors,
         getStrengthDisplayText,
         getTipsText,
         getDrawButtonState,

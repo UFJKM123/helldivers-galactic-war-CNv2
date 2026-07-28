@@ -43,5 +43,9 @@
     "confirm_note": "Confirm",
     "faction_stats": "Faction Stats",
     "stats_planets": "Planets:",
-    "stats_troops": "Troops:"
+    "stats_troops": "Troops:",
+    "set_strength": "Set Strength",
+    "set_strength_title": "Set Faction Strength",
+    "set_strength_hint": "Extra troops per turn for each faction",
+    "cancel": "Cancel"
 }

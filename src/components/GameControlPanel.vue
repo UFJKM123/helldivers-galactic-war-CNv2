@@ -14,6 +14,8 @@ const campOptions = [
 ] as const;
 
 const showStats = ref(false);
+const showStrengthDialog = ref(false);
+const strengthInputs = ref<Record<string, number>>({});
 
 interface FactionStat {
   campKey: CampKey | null;
@@ -48,6 +50,24 @@ const factionStats = computed<FactionStat[]>(() => {
   }
   return stats;
 });
+
+const enemyCampKeys = computed(() =>
+  CAMP_KEYS.filter((ck) => ck !== props.game.options.playerCampKey)
+);
+
+function openStrengthDialog() {
+  const inputs: Record<string, number> = {};
+  enemyCampKeys.value.forEach((ck) => {
+    inputs[ck] = 0;
+  });
+  strengthInputs.value = inputs;
+  showStrengthDialog.value = true;
+}
+
+function confirmStrength() {
+  props.game.setStrengthFactors(strengthInputs.value);
+  showStrengthDialog.value = false;
+}
 </script>
 
 <template>
@@ -74,20 +94,27 @@ const factionStats = computed<FactionStat[]>(() => {
           <option value="small">{{ t?.("menu.size_small") ?? "小" }}</option>
         </select>
       </div>
-      <div class="info-line"><label for="game-mode-select">{{ t?.("menu.game_mode") ?? "游戏模式：" }}</label></div>
-      <select id="game-mode-select" v-model="props.game.options.gameMode" @change="props.game.restart()">
-        <option value="normal">{{ t?.("menu.game_mode_normal") ?? "普通模式" }}</option>
-        <option value="light_assault">{{ t?.("menu.game_mode_illuminate_assault") ?? "光能突袭" }}</option>
-        <option value="democracy_dark">{{ t?.("menu.game_mode_democracy_obscured") ?? "迟来介入" }}</option>
-      </select>
+      <div class="mode-diff-row">
+        <div class="mode-diff-col">
+          <div class="info-line"><label for="game-mode-select">{{ t?.("menu.game_mode") ?? "游戏模式：" }}</label></div>
+          <select id="game-mode-select" v-model="props.game.options.gameMode" @change="props.game.restart()">
+            <option value="normal">{{ t?.("menu.game_mode_normal") ?? "普通模式" }}</option>
+            <option value="light_assault">{{ t?.("menu.game_mode_illuminate_assault") ?? "光能突袭" }}</option>
+            <option value="democracy_dark">{{ t?.("menu.game_mode_democracy_obscured") ?? "迟来介入" }}</option>
+          </select>
+        </div>
+        <div class="mode-diff-col">
+          <div class="info-line"><label for="difficulty-select">{{ props.game.language.value === "zh-cn" ? "难度：" : "Difficulty:" }}</label></div>
+          <select id="difficulty-select" v-model="props.game.options.difficulty" @change="props.game.restart()">
+            <option value="easy">{{ t?.("menu.difficulty_select_easy") ?? "简单" }}</option>
+            <option value="normal">{{ t?.("menu.difficulty_select_normal") ?? "一般" }}</option>
+            <option value="hard">{{ t?.("menu.difficulty_select_hard") ?? "困难" }}</option>
+          </select>
+        </div>
+      </div>
       <div class="diff-row">
-        <label class="sr-only" for="difficulty-select">{{ t?.("menu.difficulty_select_normal") ?? "难度" }}</label>
-        <select id="difficulty-select" v-model="props.game.options.difficulty" @change="props.game.restart()">
-          <option value="easy">{{ t?.("menu.difficulty_select_easy") ?? "简单" }}</option>
-          <option value="normal">{{ t?.("menu.difficulty_select_normal") ?? "一般" }}</option>
-          <option value="hard">{{ t?.("menu.difficulty_select_hard") ?? "困难" }}</option>
-        </select>
         <button class="btn-deploy" @click="props.game.randomizeEnemyStrength">{{ t?.("menu.random_intensity") ?? "随机强度" }}</button>
+        <button class="btn-deploy" @click="openStrengthDialog">{{ t?.("menu.set_strength") ?? "设定强度" }}</button>
       </div>
       <div class="info-line strength-display">{{ props.game.getStrengthDisplay() }}</div>
       <button @click="props.game.restart()">{{ t?.("menu.restart_campaign") ?? "重新开局" }}</button>
@@ -144,4 +171,21 @@ const factionStats = computed<FactionStat[]>(() => {
       </div>
     </div>
   </aside>
+
+  <!-- 设定强度弹窗 -->
+  <div v-if="showStrengthDialog" class="modal" role="dialog" aria-modal="true" @click.self="showStrengthDialog = false">
+    <div class="modal-box strength-modal">
+      <h2>{{ t?.("menu.set_strength_title") ?? "设定阵营强度" }}</h2>
+      <p class="strength-hint">{{ t?.("menu.set_strength_hint") ?? "每个阵营每回合额外增加的兵力值" }}</p>
+      <div v-for="ck in enemyCampKeys" :key="ck" class="strength-input-row">
+        <span class="stat-color" :style="{ background: CAMPS[ck].color }"></span>
+        <span class="strength-label">{{ CAMPS[ck].name }}</span>
+        <input type="number" min="0" max="99" v-model.number="strengthInputs[ck]" class="strength-input" />
+      </div>
+      <div class="strength-buttons">
+        <button class="btn-weapon" @click="confirmStrength">{{ t?.("menu.confirm_note") ?? "确定" }}</button>
+        <button class="btn-deploy" @click="showStrengthDialog = false">{{ t?.("menu.cancel") ?? "取消" }}</button>
+      </div>
+    </div>
+  </div>
 </template>

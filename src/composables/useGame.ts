@@ -121,6 +121,11 @@ export function useGame() {
     state.value = engine.value?.getPublicState() ?? state.value;
   }
 
+  function setStrengthFactors(values: Partial<Record<CampKey, number>>): void {
+    engine.value?.setStrengthFactors(values);
+    state.value = engine.value?.getPublicState() ?? state.value;
+  }
+
   function closeEvent(): void {
     eventQueue.value.shift();
   }
@@ -197,6 +202,7 @@ export function useGame() {
     activateFinal,
     drawStrategicEvent,
     randomizeEnemyStrength,
+    setStrengthFactors,
     closeEvent,
     closeResult,
     startSpectate,

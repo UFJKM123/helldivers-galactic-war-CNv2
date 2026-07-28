@@ -44,3 +44,7 @@ confirm_note,确定,Confirm
 faction_stats,阵营统计,Faction Stats
 stats_planets,星球：,Planets:
 stats_troops,兵力：,Troops:
+set_strength,设定强度,Set Strength
+set_strength_title,设定阵营强度,Set Faction Strength
+set_strength_hint,每个阵营每回合额外增加的兵力值,Extra troops per turn for each faction
+cancel,取消,Cancel
