@@ -101,11 +101,17 @@ const factionStats = computed<FactionStat[]>(() => {
         <span>{{ t?.("menu.faction_stats") ?? "阵营统计" }}</span>
       </div>
       <div v-if="showStats" class="stats-panel">
+        <div class="stat-row stat-header">
+          <span class="stat-color-placeholder"></span>
+          <span class="stat-name"></span>
+          <span class="stat-planets">{{ t?.("menu.stats_planets") ?? "星球" }}</span>
+          <span class="stat-troops">{{ t?.("menu.stats_troops") ?? "兵力" }}</span>
+        </div>
         <div v-for="stat in factionStats" :key="stat.campKey ?? 'neutral'" class="stat-row">
           <span class="stat-color" :style="{ background: stat.color }"></span>
           <span class="stat-name">{{ stat.campName }}</span>
-          <span class="stat-planets">{{ t?.("menu.stats_planets") ?? "星球" }}: {{ stat.planetCount }}</span>
-          <span class="stat-troops">{{ t?.("menu.stats_troops") ?? "兵力" }}: {{ stat.troopCount.toLocaleString() }}</span>
+          <span class="stat-planets">{{ stat.planetCount }}</span>
+          <span class="stat-troops">{{ stat.troopCount.toLocaleString() }}</span>
         </div>
       </div>
       <div class="send-selector">
