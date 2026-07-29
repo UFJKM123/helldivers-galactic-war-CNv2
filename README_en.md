@@ -32,6 +32,15 @@ Editable localization sources are under `lang_csv/`. Regenerate the runtime JSON
 
 ## 📋 Update Log
 
+
+### V5.3.0
+- Fixes:
+Settlement popups are now always placed at the end of the queue.
+- Balance:
+  1. The DSS and ASS can now remove one level of Haze or Silent Domain after being deployed to a planet affected by Haze or Silent Domain.
+  2. The "reduce troop count by 20" effect of the DSS and ASS now triggers every turn.
+  3. Random difficulty caps: the sum of the results must not exceed 3; the sum of custom difficulty settings must not exceed 9.
+
 ### V5.2.0
 - Fixes：
   1. Fixed issue where small star maps could have disconnected isolated nodes.
