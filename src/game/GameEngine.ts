@@ -33,7 +33,7 @@ export interface GameEngine {
     activateFinal(): ActionResult;
     performStrategicDraw(): ActionResult;
     randomizeEnemyStrength(): Record<CampKey, number>;
-    setStrengthFactors(values: Partial<Record<CampKey, number>>): void;
+    setStrengthFactors(values: Partial<Record<CampKey, number>>): ActionResult;
     getStrengthDisplayText(): string;
     getTipsText(): string;
     getDrawButtonState(): { text: string; disabled: boolean };
@@ -590,6 +590,17 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
             targetPlanet.troop = Math.max(1, targetPlanet.troop - 20);
         }
         state.weaponMovedThisTurn = true;
+
+        // DSS/ASS部署后消除一级阴霾/寂域
+        const hazeSilenceWeapons = state.weapons.filter(w =>
+            w.planetId === targetPlanet.uid &&
+            (w.camp === "TERM" || w.camp === "LIGHT")
+        );
+        if (hazeSilenceWeapons.length > 0) {
+            const removed = hazeSilenceWeapons[0];
+            state.weapons = state.weapons.filter(w => w.id !== removed.id);
+        }
+
         state.selectedWeapon = null;
         state.selectedPlanets = [];
         render();
@@ -883,20 +894,38 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
     function randomizeEnemyStrength(): Record<CampKey, number> {
         const enemyCamps = CAMP_KEYS.filter(ck=>ck !== state.playerCampKey);
         state.aiStrengthFactors = {};
-        enemyCamps.forEach(ck=>{
-            state.aiStrengthFactors[ck] = Math.floor(random()*4);
+        // 随机分配总量不超过3
+        let remaining = 3;
+        const shuffled = [...enemyCamps].sort(() => random() - 0.5);
+        shuffled.forEach((ck, index) => {
+            if (index === shuffled.length - 1) {
+                state.aiStrengthFactors[ck] = remaining;
+            } else {
+                const val = Math.floor(random() * (remaining + 1));
+                state.aiStrengthFactors[ck] = val;
+                remaining -= val;
+            }
         });
         triggerEvent(translate("random_strength_title"), translate("random_strength_message"));
         return { ...state.aiStrengthFactors } as Record<CampKey, number>;
     }
 
-    function setStrengthFactors(values: Partial<Record<CampKey, number>>) {
+    function setStrengthFactors(values: Partial<Record<CampKey, number>>): ActionResult {
         const enemyCamps = CAMP_KEYS.filter(ck => ck !== state.playerCampKey);
+        // 计算总和，自设强度总和不超过9
+        let total = 0;
+        enemyCamps.forEach(ck => {
+            if(values[ck] !== undefined){
+                total += Math.max(0, Math.floor(values[ck]!));
+            }
+        });
+        if (total > 9) return { success: false, msg: translate("strength_limit_exceeded") };
         enemyCamps.forEach(ck => {
             if(values[ck] !== undefined){
                 state.aiStrengthFactors[ck] = Math.max(0, Math.floor(values[ck]!));
             }
         });
+        return { success: true };
     }
 
     function getStrengthDisplayText() {
@@ -1078,6 +1107,16 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
             if(w.type==='deploy' && w.decay>0){
                 const p = state.planets.find(p=>p.uid===w.planetId);
                 if(p && p.camp !== w.camp) p.troop = Math.max(1, p.troop - w.decay);
+            }
+        });
+
+        // DSS/ASS（移动型武器）每回合对所在敌方星球减20兵力
+        state.weapons.forEach(w=>{
+            if(w.type==='mobile'){
+                const p = state.planets.find(p=>p.uid===w.planetId);
+                if(p && p.camp !== null && p.camp !== w.camp){
+                    p.troop = Math.max(1, p.troop - 20);
+                }
             }
         });
 

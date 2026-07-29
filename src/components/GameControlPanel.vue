@@ -65,8 +65,10 @@ function openStrengthDialog() {
 }
 
 function confirmStrength() {
-  props.game.setStrengthFactors(strengthInputs.value);
-  showStrengthDialog.value = false;
+  const success = props.game.setStrengthFactors(strengthInputs.value);
+  if (success) {
+    showStrengthDialog.value = false;
+  }
 }
 </script>
 
