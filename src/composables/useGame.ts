@@ -121,9 +121,14 @@ export function useGame() {
     state.value = engine.value?.getPublicState() ?? state.value;
   }
 
-  function setStrengthFactors(values: Partial<Record<CampKey, number>>): void {
-    engine.value?.setStrengthFactors(values);
+  function setStrengthFactors(values: Partial<Record<CampKey, number>>): boolean {
+    const result = engine.value?.setStrengthFactors(values) ?? { success: true };
     state.value = engine.value?.getPublicState() ?? state.value;
+    if (!result.success && result.msg) {
+      showError(result.msg);
+      return false;
+    }
+    return true;
   }
 
   function closeEvent(): void {

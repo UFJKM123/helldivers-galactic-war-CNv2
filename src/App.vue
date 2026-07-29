@@ -25,7 +25,7 @@ const game = useGame();
       @confirm="game.closeEvent"
     />
     <ResultModal
-      v-if="game.result.value"
+      v-if="game.result.value && !game.currentEvent.value"
       :result="game.result.value"
       :translate="game.t"
       @close="game.newGame"
