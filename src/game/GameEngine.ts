@@ -84,6 +84,8 @@ interface InternalState {
     boxEndX: number;
     boxEndY: number;
     sendRatio: number;
+    animFrameId: number | null;
+    colorTransitions: Map<string, { from: string; to: string; start: number }>;
 }
 
 export function createGameEngine(random: RandomSource = Math.random): GameEngine {
@@ -132,7 +134,9 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
         boxStartY: 0,
         boxEndX: 0,
         boxEndY: 0,
-        sendRatio: 1.0
+        sendRatio: 1.0,
+        animFrameId: null,
+        colorTransitions: new Map()
     };
 
     let callbacks: EngineCallbacks = {};
@@ -190,6 +194,7 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
         state.selectedPlanets = [];
         state.homeFallTriggered.clear();
         state.weaponMovedThisTurn = false;
+        state.colorTransitions.clear();
         state.isMouseDown = false;
         state.hasDragged = false;
 
@@ -360,6 +365,20 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
 
     function render() {
         if (!state.ctx || !state.canvas) return;
+
+        // 清理已完成的颜色过渡
+        const now = performance.now() / 1000;
+        state.colorTransitions.forEach((t, uid) => {
+            if (now - t.start > 0.5) state.colorTransitions.delete(uid);
+        });
+
+        // 根据是否有选中星球或活跃过渡自动启停动画循环
+        if (state.selectedPlanets.length > 0 || state.colorTransitions.size > 0) {
+            startAnimLoop();
+        } else {
+            stopAnimLoop();
+        }
+
         renderGalaxy(state.ctx, {
             width: state.canvas.width,
             height: state.canvas.height,
@@ -375,7 +394,25 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
             boxStartY: state.boxStartY,
             boxEndX: state.boxEndX,
             boxEndY: state.boxEndY,
+            animTime: performance.now() / 1000,
+            colorTransitions: state.colorTransitions,
         });
+    }
+
+    function startAnimLoop() {
+        if (state.animFrameId !== null) return; // 已在运行
+        function tick() {
+            render();
+            state.animFrameId = requestAnimationFrame(tick);
+        }
+        state.animFrameId = requestAnimationFrame(tick);
+    }
+
+    function stopAnimLoop() {
+        if (state.animFrameId !== null) {
+            cancelAnimationFrame(state.animFrameId);
+            state.animFrameId = null;
+        }
     }
 
     function getCampWeaponDef(campKey: CampKey) {
@@ -729,6 +766,7 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
                 const oldCamp = target.camp;
                 target.camp = state.playerCampKey;
                 target.troop = result;
+                scheduleCaptureTransition(target, oldCamp);
                 onPlanetCaptured(target, oldCamp, state.playerCampKey);
                 checkConquestWin();
             } else {
@@ -777,6 +815,7 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
             state.statKills += to.troop;
             to.camp = attackingCamp;
             to.troop = result;
+            scheduleCaptureTransition(to, oldCamp);
             onPlanetCaptured(to, oldCamp, attackingCamp);
             checkConquestWin();
         } else {
@@ -798,6 +837,16 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
             }
         }
         checkEliminations();
+    }
+
+    function scheduleCaptureTransition(planet: Planet, oldCamp: CampKey | null) {
+        const oldColor = oldCamp ? CAMPS[oldCamp].color : "#505050";
+        const newColor = planet.camp ? CAMPS[planet.camp].color : "#505050";
+        state.colorTransitions.set(planet.uid, {
+            from: oldColor,
+            to: newColor,
+            start: performance.now() / 1000,
+        });
     }
 
     function checkEliminations() {
@@ -955,7 +1004,7 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
             const send = Math.floor(ownPlanet.troop * 0.7);
             ownPlanet.troop -= send;
             const res = send - target.troop;
-            if(res > 0){ target.camp = campKey; target.troop = res; }
+            if(res > 0){ target.camp = campKey; target.troop = res; scheduleCaptureTransition(target, null); }
             else { target.troop = Math.max(1, target.troop - send); }
         });
 
@@ -1093,7 +1142,7 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
         const selectedTargets = neutralPlanets.sort(()=>random()-0.5).slice(0, targetCount);
         const avgTroop = Math.floor(assaultPower / targetCount);
 
-        selectedTargets.forEach(p=>{ p.camp = "LIGHT"; p.troop = avgTroop; });
+        selectedTargets.forEach(p=>{ p.camp = "LIGHT"; p.troop = avgTroop; scheduleCaptureTransition(p, null); });
         const lightHome = state.planets.find(p=>p.isHome && p.camp==="LIGHT");
         if(lightHome) lightHome.troop += Math.floor(assaultPower * 0.3);
 
@@ -1226,6 +1275,7 @@ export function createGameEngine(random: RandomSource = Math.random): GameEngine
         if(res > 0){
             target.camp = attackingCamp;
             target.troop = res;
+            scheduleCaptureTransition(target, oldCamp);
             onPlanetCaptured(target, oldCamp, attackingCamp, false);
             checkConquestWin();
             if(!state.spectateMode) checkDefeat();

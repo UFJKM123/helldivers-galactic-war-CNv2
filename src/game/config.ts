@@ -50,10 +50,10 @@ function createCamp(
 }
 
 export const CAMPS = {
-  EARTH: createCamp("EARTH", "#4499ff", "mobile", 20, 30),
-  TERM: createCamp("TERM", "#ffcc22", "deploy", 20, 15, 5),
-  LIGHT: createCamp("LIGHT", "#9944dd", "deploy", 20, 15, 5),
-  ROBOT: createCamp("ROBOT", "#dd2222", "mobile", 20, 30),
+  EARTH: createCamp("EARTH", "#7ab3dc", "mobile", 20, 30),
+  TERM: createCamp("TERM", "#f4b800", "deploy", 20, 15, 5),
+  LIGHT: createCamp("LIGHT", "#c88aeb", "deploy", 20, 15, 5),
+  ROBOT: createCamp("ROBOT", "#ed5f60", "mobile", 20, 30),
 } satisfies Record<CampKey, CampConfig>;
 
 const EVENT_COUNTS: Record<CampKey, { negative: number; positive: number }> = {
